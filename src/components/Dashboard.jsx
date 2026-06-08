@@ -139,6 +139,7 @@ export function Dashboard({ loans, confirm, setConfirm, onOpen }) {
   const live = loans.filter(l => !Core.isDead(l))
   const volume = loans.reduce((a, l) => a + (Number(l.amount) || 0), 0)
   const closed = loans.filter(Core.isClosed)
+  const closedVolume = closed.reduce((a, l) => a + (Number(l.amount) || 0), 0)
   const closeComm = closed.reduce((a, l) => a + Core.closingComm(l), 0)
   const trail = closed.reduce((a, l) => a + Core.monthlyTrail(l), 0)
   const alerts = loans.filter(Core.needsFollowUp)
@@ -148,6 +149,7 @@ export function Dashboard({ loans, confirm, setConfirm, onOpen }) {
       <div className="kpis">
         <Kpi label="Loans in pipeline" value={live.length} foot="active (not dead)" tone="" icon="layers" />
         <Kpi label="Total loan volume" value={Core.shortMoney(volume)} foot="all statuses" tone="" icon="trend" />
+        <Kpi label="Closed loan volume" value={Core.shortMoney(closedVolume)} foot="funded loans only" tone="green" icon="dollar" />
         <Kpi label="Closed loans" value={closed.length} foot="funded" tone="green" icon="check" />
         <Kpi label="Closing commissions" value={Core.money(closeComm)} foot={'earned · ' + (Core.CONFIG.closePct * 100) + '% of closed'} tone="accent" icon="dollar" />
         <Kpi label="Monthly trail — active" value={Core.money(trail)} foot={'per month · ' + (Core.CONFIG.trailPct * 100) + '%'} tone="accent" icon="repeat" />

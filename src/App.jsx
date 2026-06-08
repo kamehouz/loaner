@@ -9,7 +9,7 @@ import { LoanForm, ColumnsDrawer } from './components/LoanForm.jsx'
 import { TweaksPanel, TweakSection, TweakSlider, TweakColor, useTweaks } from './components/TweaksPanel.jsx'
 
 const TWEAK_DEFAULTS = {
-  accent: '#c96f43',
+  accent: '#7a5aa6',
   closePct: 2,
   trailPct: 0.5,
   followDays: 3,
