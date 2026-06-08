@@ -33,14 +33,8 @@ export function PipelineBars({ loans }) {
   const counts = Core.orderedStatuses().map(s => {
     const info = Core.statusInfo(s.id)
     return { info, c: loans.filter(l => l.status === s.id).length }
-  }).filter(x => x.c > 0)
-
+  })
   const max = Math.max(1, ...counts.map(x => x.c))
-
-  if (!counts.length) {
-    return <div className="bars" style={{ color: 'var(--muted)', fontSize: 13, padding: '18px 0' }}>No loans in the pipeline yet.</div>
-  }
-
   return (
     <div className="bars">
       {counts.map(({ info, c }) => (
@@ -49,10 +43,10 @@ export function PipelineBars({ loans }) {
           <div className="bar-track">
             <div
               className={'bar-fill' + (info.tone === 'closed' ? ' closed' : info.tone === 'dead' ? ' dead' : '')}
-              style={{ width: Math.max(7, (c / max) * 100) + '%' }}
+              style={{ width: c === 0 ? '0%' : Math.max(7, (c / max) * 100) + '%' }}
             />
           </div>
-          <span className="ct">{c}</span>
+          <span className="ct" style={{ color: c === 0 ? 'var(--muted)' : 'var(--ink)' }}>{c}</span>
         </div>
       ))}
     </div>

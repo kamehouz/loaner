@@ -153,15 +153,14 @@ button { font-family: inherit }
 
 /* pipeline bars */
 .bars { display: flex; flex-direction: column; gap: 0; margin-top: 14px }
-.bar-row { display: grid; grid-template-columns: 130px 1fr 28px; align-items: center; gap: 10px; height: 42px; border-bottom: 1px solid var(--line) }
+.bar-row { display: grid; grid-template-columns: 130px 1fr 28px; align-items: center; gap: 10px; min-height: 44px; max-height: 44px; box-sizing: border-box; border-bottom: 1px solid var(--line) }
 .bar-row:last-child { border-bottom: none }
 .bar-row .nm { font-size: 12.5px; font-weight: 600; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
 .bar-track { height: 10px; border-radius: 6px; background: var(--bg-2); overflow: hidden }
 .bar-fill { height: 100%; border-radius: 6px; background: var(--blue); transition: width .5s cubic-bezier(.2,.8,.2,1) }
 .bar-fill.closed { background: var(--green) }
 .bar-fill.dead { background: var(--red) }
-.bar-row .ct { font-family: var(--display); font-weight: 700; font-size: 15px; text-align: right; color: var(--ink) }
-.bar-row.empty .nm, .bar-row.empty .ct { color: var(--muted) }
+.bar-row .ct { font-family: var(--display); font-weight: 700; font-size: 15px; text-align: right }
 
 /* ============ tables ============ */
 .tbl-wrap { overflow-x: auto; border-radius: var(--r); scrollbar-width: thin }
