@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from './supabase.js'
+import { supabase, missingConfig } from './supabase.js'
 import * as Core from './core.js'
 import { Icon } from './components/Icons.jsx'
 import { ConfirmDialog } from './components/Shared.jsx'
@@ -207,6 +207,19 @@ export default function App() {
   const todayStr = Core.today().toLocaleDateString('en-US', {
     weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
   })
+
+  if (missingConfig) {
+    return (
+      <div className="error-screen">
+        <h2>Setup required</h2>
+        <p>This app needs two Supabase environment variables to connect to the database.</p>
+        <p>In your <strong>Vercel project → Settings → Environment Variables</strong>, add:</p>
+        <p><code>VITE_SUPABASE_URL</code> — your Supabase project URL</p>
+        <p><code>VITE_SUPABASE_ANON_KEY</code> — your Supabase anon/public key</p>
+        <p>Then go to <strong>Vercel → Deployments → Redeploy</strong> to pick up the new variables.</p>
+      </div>
+    )
+  }
 
   if (loading) {
     return (
