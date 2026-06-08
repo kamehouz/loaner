@@ -3,11 +3,14 @@ import { createClient } from '@supabase/supabase-js'
 const url = import.meta.env.VITE_SUPABASE_URL
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-export const missingConfig = !url || !key
+const validUrl = url && url.startsWith('http')
 
-// Use placeholder values so createClient doesn't throw at import time —
-// App.jsx checks missingConfig and shows a setup error screen instead.
+export const missingConfig = !validUrl || !key
+export const configError = !validUrl && url
+  ? `VITE_SUPABASE_URL looks wrong: "${url}". It must start with https://`
+  : null
+
 export const supabase = createClient(
-  url || 'https://placeholder.supabase.co',
+  validUrl ? url : 'https://placeholder.supabase.co',
   key || 'placeholder-key'
 )

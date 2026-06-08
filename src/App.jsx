@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase, missingConfig } from './supabase.js'
+import { supabase, missingConfig, configError } from './supabase.js'
 import * as Core from './core.js'
 import { Icon } from './components/Icons.jsx'
 import { ConfirmDialog } from './components/Shared.jsx'
@@ -212,11 +212,14 @@ export default function App() {
     return (
       <div className="error-screen">
         <h2>Setup required</h2>
-        <p>This app needs two Supabase environment variables to connect to the database.</p>
-        <p>In your <strong>Vercel project → Settings → Environment Variables</strong>, add:</p>
-        <p><code>VITE_SUPABASE_URL</code> — your Supabase project URL</p>
-        <p><code>VITE_SUPABASE_ANON_KEY</code> — your Supabase anon/public key</p>
-        <p>Then go to <strong>Vercel → Deployments → Redeploy</strong> to pick up the new variables.</p>
+        {configError
+          ? <p style={{color:'var(--red)',fontWeight:700}}>{configError}</p>
+          : <p>The Supabase environment variables are missing.</p>
+        }
+        <p>In <strong>Vercel → Settings → Environment Variables</strong>, make sure you have:</p>
+        <p><code>VITE_SUPABASE_URL</code> = <em>must start with</em> <code>https://</code> (e.g. <code>https://abcdef.supabase.co</code>)</p>
+        <p><code>VITE_SUPABASE_ANON_KEY</code> = the long anon/public key string</p>
+        <p>After updating the values, click <strong>Redeploy</strong> in the Vercel Deployments tab.</p>
       </div>
     )
   }
