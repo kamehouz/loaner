@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dinio Lending — Pipeline Tracker · Wireframes</title>
+<link rel="stylesheet" href="wireframe.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <span class="logo">Dinio Lending</span>
+    <span class="sub">· TuCoop Referral Pipeline</span>
+  </div>
+  <span class="lofi-chip">low-fi wireframes</span>
+  <button class="toolbtn on" id="noteToggle">✎ annotations: on</button>
+</div>
+
+<div class="wrap">
+  <nav class="rail">
+    <h4>Start here</h4>
+    <button class="navitem active" data-frame="overview"><span class="dot"></span>Overview &amp; plan</button>
+
+    <h4>Dashboard — explore</h4>
+    <button class="navitem" data-frame="dashA"><span class="dot"></span>A · Classic (spec)</button>
+    <button class="navitem" data-frame="dashB"><span class="dot"></span>B · Action-first</button>
+    <button class="navitem" data-frame="dashC"><span class="dot"></span>C · Compact</button>
+
+    <h4>Loan database</h4>
+    <button class="navitem" data-frame="table"><span class="dot"></span>Loan table</button>
+    <button class="navitem" data-frame="columns"><span class="dot"></span>Manage columns ★</button>
+
+    <h4>Data entry</h4>
+    <button class="navitem" data-frame="form"><span class="dot"></span>Add / Edit modal</button>
+  </nav>
+
+  <main class="canvas">
+
+    <!-- ============ OVERVIEW ============ -->
+    <section class="frame show" id="overview">
+      <div class="frame-head">
+        <h2 class="frame-title">What we're mapping out</h2>
+        <p class="frame-desc">Rough, low-fidelity structure before we commit to a look. Click through the frames on the left. Everything is placeholder — we're testing layout, flow, and which fields actually matter. Toggle annotations (top right) to read the design notes.</p>
+      </div>
+
+      <div class="cols" style="grid-template-columns:1fr 1fr">
+        <div class="sketch panel">
+          <h3>Two views, one toggle</h3>
+          <p class="ph" style="font-size:15px;line-height:1.5">A top nav flips between the <b>Dashboard</b> (read-only health of the pipeline + commission earnings) and the <b>Loan Database</b> (the working table where loans are entered &amp; edited).</p>
+          <div class="gap"></div>
+          <h3>Commission math is automatic</h3>
+          <p class="ph" style="font-size:15px;line-height:1.5"><b>2% at close</b> + <b>0.5% monthly trail</b> for the life of the loan. Never typed in — always derived from Loan Amount &amp; Close Date so the numbers can't drift.</p>
+        </div>
+        <div class="sketch r2 panel" style="background:var(--green-bg);border-color:var(--green)">
+          <h3 style="color:var(--green)">★ Your column ask</h3>
+          <p class="ph" style="font-size:15px;line-height:1.55;color:#3f5836">You weren't sure which columns you'll keep. So columns are <b>rename-able and removable</b>. A handful of <b>core data points stay locked</b> — Loan Amount, Status, Close/End Date and the auto commissions — so trimming the table never breaks the money math. See the <b>Manage columns ★</b> frame.</p>
+        </div>
+      </div>
+
+      <div class="note-row">
+        <span class="note">Sample data = <b>5 made-up loans</b> so the dashboard isn't empty. Easy to wipe later.</span>
+        <span class="note">3 dashboard layouts to compare — pick one or mix &amp; match.</span>
+      </div>
+    </section>
+
+    <!-- ============ DASHBOARD A ============ -->
+    <section class="frame" id="dashA">
+      <div class="frame-head">
+        <h2 class="frame-title">Dashboard · A — Classic</h2>
+        <p class="frame-desc">Faithful to the brief: 5 KPI cards across the top, pipeline + commissions side by side, follow-up alerts along the bottom. Familiar, scannable top-to-bottom.</p>
+      </div>
+
+      <div class="kpi-row">
+        <div class="sketch kpi"><div class="label">Loans in pipeline</div><div class="val">5</div><div class="sub">not marked dead</div></div>
+        <div class="sketch kpi"><div class="label">Total loan volume</div><div class="val">$351.5k</div><div class="sub">all statuses</div></div>
+        <div class="sketch kpi green"><div class="label">Closed loans</div><div class="val">2</div><div class="sub">funded</div></div>
+        <div class="sketch kpi accent"><div class="label">Closing commissions earned</div><div class="val">$2,260</div><div class="sub">2% of closed</div></div>
+        <div class="sketch kpi accent"><div class="label">Monthly trail — active</div><div class="val">$565</div><div class="sub">per month · 0.5%</div></div>
+      </div>
+
+      <div class="callout">
+        <span class="arrow">↳</span>
+        <span class="note">The <b>0.5% trail</b> recurs <b>every month</b> for the life of each closed loan — easy to forget. This panel pings you to confirm each deposit landed (it's the "monthly reconciliation" from your spreadsheet).</span>
+      </div>
+      <div class="sketch r2 panel trail-panel" data-trail></div>
+
+      <div class="cols">
+        <div class="sketch panel">
+          <h3>Pipeline by stage</h3>
+          <div class="bars" data-bars></div>
+        </div>
+        <div class="sketch r2 panel">
+          <h3>Commission summary <span class="pct">· closed loans</span></h3>
+          <table class="wf" data-commtable></table>
+        </div>
+      </div>
+
+      <div class="callout">
+        <span class="arrow">↳</span>
+        <span class="note">Amber panel = <b>action needed</b>. Loans untouched &gt; 3 business days &amp; not closed/dead surface here.</span>
+      </div>
+      <div class="sketch r3 alerts" data-alerts></div>
+    </section>
+
+    <!-- ============ DASHBOARD B ============ -->
+    <section class="frame" id="dashB">
+      <div class="frame-head">
+        <h2 class="frame-title">Dashboard · B — Action-first</h2>
+        <p class="frame-desc">Flips the priority: what needs a human <em>today</em> sits top-right where the eye lands. Pipeline shown as a shrinking funnel. KPIs become a calm left column you glance at, not the headline.</p>
+      </div>
+
+      <div class="cols" style="grid-template-columns:.85fr 1.15fr">
+        <div>
+          <div class="sketch panel" style="margin-bottom:18px">
+            <h3>Earnings at a glance</h3>
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div><div class="ph" style="font-size:13px">Closing commissions</div><div class="val" style="font-family:var(--note);font-weight:700;font-size:30px;color:var(--accent)">$2,260</div></div>
+              <div><div class="ph" style="font-size:13px">Monthly trail (active)</div><div class="val" style="font-family:var(--note);font-weight:700;font-size:30px;color:var(--accent)">$565<span style="font-size:15px;color:var(--ink-soft)"> /mo</span></div></div>
+              <div style="display:flex;gap:18px">
+                <div><div class="ph" style="font-size:13px">Pipeline</div><div style="font-family:var(--note);font-weight:700;font-size:26px">5</div></div>
+                <div><div class="ph" style="font-size:13px">Volume</div><div style="font-family:var(--note);font-weight:700;font-size:26px">$351k</div></div>
+                <div><div class="ph" style="font-size:13px">Closed</div><div style="font-family:var(--note);font-weight:700;font-size:26px;color:var(--green)">2</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="sketch r2 panel">
+            <h3>Funnel</h3>
+            <div data-funnel></div>
+          </div>
+        </div>
+
+        <div class="sketch r3 alerts">
+          <h3>⚑ Needs follow-up now</h3>
+          <div data-alerts></div>
+          <div class="gap"></div>
+          <p class="ph" style="font-size:14px;color:#6a4a1c">When this list is empty, it shows a calm “All caught up ✓”.</p>
+        </div>
+      </div>
+
+      <div class="note-row">
+        <span class="note">Good if the day-to-day job is <b>chasing loans</b>, not reporting.</span>
+      </div>
+    </section>
+
+    <!-- ============ DASHBOARD C ============ -->
+    <section class="frame" id="dashC">
+      <div class="frame-head">
+        <h2 class="frame-title">Dashboard · C — Compact</h2>
+        <p class="frame-desc">Everything above the fold. KPIs collapse into a tight strip, pipeline becomes small stat chips, and the commission table is the hero. Dense — best for a power user who lives in this screen.</p>
+      </div>
+
+      <div class="sketch thin" style="display:flex;gap:0;padding:0;overflow:hidden;margin-bottom:16px">
+        <div class="cstrip">Pipeline<b>5</b></div>
+        <div class="cstrip">Volume<b>$351.5k</b></div>
+        <div class="cstrip">Closed<b style="color:var(--green)">2</b></div>
+        <div class="cstrip">2% earned<b style="color:var(--accent)">$2,260</b></div>
+        <div class="cstrip">Trail / mo<b style="color:var(--accent)">$565</b></div>
+      </div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px" data-chips></div>
+
+      <div class="cols" style="grid-template-columns:1.4fr .9fr">
+        <div class="sketch r2 panel">
+          <h3>Commission summary <span class="pct">· running totals</span></h3>
+          <table class="wf" data-commtable></table>
+        </div>
+        <div class="sketch r3 alerts">
+          <h3>⚑ Follow-ups</h3>
+          <div data-alerts data-compact></div>
+        </div>
+      </div>
+      <div class="note-row"><span class="note">Trade-off: powerful but <b>busy</b> — less friendly for a first-time user.</span></div>
+    </section>
+
+    <!-- ============ LOAN TABLE ============ -->
+    <section class="frame" id="table">
+      <div class="frame-head">
+        <h2 class="frame-title">Loan database — the working table</h2>
+        <p class="frame-desc">Every loan, every field. Click a row to edit it in the modal; trash icon deletes (with a confirm). Status uses colored badges. Hover a column header for its ⚙ menu — rename, hide, or remove.</p>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <button class="btn primary" data-open-form>+ Add new loan</button>
+        <button class="btn" data-frame-jump="columns">⚙ Manage columns</button>
+        <span class="ph" style="margin-left:auto;font-size:14px">Search ▢ &nbsp; Filter: Status ▾ &nbsp; Sort ▾</span>
+      </div>
+
+      <div class="sketch thin" style="padding:6px 10px;overflow:auto">
+        <table class="wf" data-loantable></table>
+      </div>
+
+      <div class="legend">
+        <span>Status:</span>
+        <span><i class="sw blue"></i> in progress</span>
+        <span><i class="sw green"></i> closed</span>
+        <span><i class="sw red"></i> dead</span>
+        <span><i class="sw amber"></i> needs follow-up</span>
+      </div>
+
+      <div class="note-row">
+        <span class="note">Columns shown here are <b>whatever you've kept</b> — the ⚙ menu &amp; the Manage Columns screen drive this.</span>
+      </div>
+    </section>
+
+    <!-- ============ MANAGE COLUMNS ============ -->
+    <section class="frame" id="columns">
+      <div class="frame-head">
+        <h2 class="frame-title">Manage columns ★</h2>
+        <p class="frame-desc">Your big ask. Show only what you need. Drag to reorder, toggle to hide, ✎ to rename, × to remove an optional column entirely. <b>Core data points are locked</b> (green) — they can't be renamed away or removed, so the commission math is always safe.</p>
+      </div>
+
+      <div class="colmgr">
+        <div class="sketch col-list">
+          <h3 style="font-family:var(--note);font-weight:700;font-size:22px;margin:0 0 6px">Locked · core data points</h3>
+          <div class="col-item locked"><span class="grip">⋮⋮</span><span class="cname">Customer Name</span><span class="lock-pill">🔒 required</span></div>
+          <div class="col-item locked"><span class="grip">⋮⋮</span><span class="cname">Loan Amount ($)</span><span class="lock-pill">🔒 required</span></div>
+          <div class="col-item locked"><span class="grip">⋮⋮</span><span class="cname">Status</span><span class="lock-pill">🔒 required</span></div>
+          <div class="col-item locked"><span class="grip">⋮⋮</span><span class="cname">Close / loan-end date</span><span class="lock-pill">🔒 req. if closed</span></div>
+          <div class="col-item locked"><span class="grip">⋮⋮</span><span class="cname">2% Commission · 0.5% Trail</span><span class="lock-pill">🔒 auto</span></div>
+
+          <h3 style="font-family:var(--note);font-weight:700;font-size:22px;margin:18px 0 6px">Optional · rename / hide / remove</h3>
+          <div data-optcols></div>
+        </div>
+
+        <div>
+          <div class="callout"><span class="arrow">←</span><span class="note">Try it — toggle, rename, or remove a column. Watch the live preview update below.</span></div>
+          <div class="sketch r2 panel">
+            <h3>Live table preview</h3>
+            <div style="overflow:auto"><table class="wf" data-previewtable></table></div>
+          </div>
+          <div class="gap"></div>
+          <div class="sketch r3 panel" style="background:var(--green-bg);border-color:var(--green)">
+            <h3 style="color:var(--green)">Why lock some?</h3>
+            <p class="ph" style="font-size:14px;line-height:1.5;color:#3f5836">If someone deleted “Loan Amount” or “Close Date”, the 2% / 0.5% / months-active numbers would break. Locking just those keeps you free to trim everything else.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FORM MODAL ============ -->
+    <section class="frame" id="form">
+      <div class="frame-head">
+        <h2 class="frame-title">Add / Edit loan — modal</h2>
+        <p class="frame-desc">Same form for new &amp; edit (pre-filled). <span style="color:var(--red)">★</span> = required. Optional fields are labelled and can be removed from Manage Columns. Commission fields are read-only — calculated, never typed. Close Date only required once Status = Closed.</p>
+      </div>
+
+      <div class="modal-scrim">
+        <div class="sketch modal">
+          <div class="modal-head">
+            <h3>New loan · DIN-006</h3>
+            <span class="ph" style="font-size:22px;cursor:pointer">✕</span>
+          </div>
+          <div class="modal-body">
+            <div class="fgrid">
+              <div class="field"><label>Lead ID</label><div class="input">DIN-006 <span class="muted">(auto)</span></div></div>
+              <div class="field"><label>Date lead received <span class="opt">· optional</span></label><div class="input">mm / dd / yyyy</div></div>
+
+              <div class="field"><label>Customer name <span class="req">★</span></label><div class="input"> </div></div>
+              <div class="field"><label>Phone <span class="opt">· optional</span></label><div class="input"> </div></div>
+
+              <div class="field locked"><label>Loan amount ($) <span class="req">★</span></label><div class="input">$ 0</div></div>
+              <div class="field locked"><label>Status <span class="req">★</span></label><div class="input dd">1 · Lead logged</div></div>
+
+              <div class="field"><label>RIMCO seller <span class="opt">· optional</span></label><div class="input"> </div></div>
+              <div class="field"><label>Generator model <span class="opt">· optional</span></label><div class="input"> </div></div>
+
+              <div class="field"><label>Docs complete? <span class="opt">· optional</span></label><div class="input dd">Pending</div></div>
+              <div class="field"><label>Decision <span class="opt">· optional</span></label><div class="input dd">Pending</div></div>
+
+              <div class="field"><label>Date submitted to TuCoop <span class="opt">· optional</span></label><div class="input">mm / dd / yyyy</div></div>
+              <div class="field"><label>TuCoop contact <span class="opt">· optional</span></label><div class="input muted">TBD — confirm w/ TuCoop</div></div>
+
+              <div class="field locked"><label>Close / loan-end date <span class="muted">· req. when closed</span></label><div class="input">mm / dd / yyyy</div></div>
+              <div class="field"><label>Last follow-up <span class="opt">· optional</span></label><div class="input">mm / dd / yyyy</div></div>
+
+              <div class="field locked full" style="background:var(--green-bg);border-radius:10px;padding:10px 12px;border:1.5px solid var(--green)">
+                <label style="color:var(--green)">Auto-calculated · read-only</label>
+                <div style="display:flex;gap:26px;font-family:var(--read);font-size:14px;margin-top:4px">
+                  <span>2% commission: <b style="font-family:var(--note);font-size:18px">$ —</b></span>
+                  <span>0.5% monthly trail: <b style="font-family:var(--note);font-size:18px">$ —</b></span>
+                  <span class="muted">(fill in once closed)</span>
+                </div>
+              </div>
+
+              <div class="field full"><label>Notes <span class="opt">· optional</span></label><div class="input area"> </div></div>
+            </div>
+          </div>
+          <div class="modal-foot">
+            <button class="btn">Cancel</button>
+            <button class="btn primary">Save loan</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="note-row">
+        <span class="note">Minimum to save = <b>Customer + Loan amount + Status</b>. Everything else can stay blank or be removed.</span>
+        <span class="note">Editing an existing loan opens this same form, pre-filled.</span>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<style id="__om-edit-overrides"></style>
+<script src="wireframe-data.js"></script>
+</body>
+</html>
