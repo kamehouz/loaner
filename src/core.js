@@ -144,14 +144,72 @@ export function shortMoney(n) {
 }
 
 // ---------- commission calcs ----------
-export function closingComm(l)  { return isClosed(l) ? (l.amount || 0) * CONFIG.closePct : 0 }
-export function monthlyTrail(l) { return isClosed(l) ? (l.amount || 0) * CONFIG.trailPct : 0 }
+export function closingComm(l) { return isClosed(l) ? (l.amount || 0) * CONFIG.closePct : 0 }
+
+function monthDiffKeys(fromKey, toKey) {
+  const [fy, fm] = fromKey.split('-').map(Number)
+  const [ty, tm] = toKey.split('-').map(Number)
+  return (ty - fy) * 12 + (tm - fm)
+}
+
+function loanScheduleBalances(l) {
+  const principal = Number(l.amount) || 0
+  const r = (Number(l.interest_rate) || 0) / 100 / 12
+  const n = Number(l.loan_term_months) || 60
+  if (principal <= 0 || n <= 0) return [0]
+  const balances = [principal]
+  if (r === 0) {
+    const step = principal / n
+    for (let k = 1; k <= n; k++) balances.push(Math.max(0, principal - step * k))
+  } else {
+    const pow = Math.pow(1 + r, n)
+    const payment = principal * r * pow / (pow - 1)
+    let bal = principal
+    for (let k = 1; k <= n; k++) {
+      bal = bal * (1 + r) - payment
+      balances.push(Math.max(0, bal))
+    }
+  }
+  return balances
+}
+
+export function trailFeeAtPayment(l, n) {
+  if (!isClosed(l) || n < 1) return 0
+  const balances = loanScheduleBalances(l)
+  return balances[Math.min(n - 1, balances.length - 1)] * (CONFIG.trailPct / 12)
+}
+
+export function trailFeeForMonth(l, mk) {
+  if (!isClosed(l) || !l.close) return 0
+  const closeKey = monthKey(parseDate(l.close))
+  const n = monthDiffKeys(closeKey, mk) + 1
+  return n < 1 ? 0 : trailFeeAtPayment(l, n)
+}
+
 export function monthsActive(l) { return isClosed(l) && l.close ? monthsBetween(l.close) : 0 }
-export function trailToDate(l)  { return monthlyTrail(l) * monthsActive(l) }
+
+export function monthlyTrail(l) {
+  if (!isClosed(l)) return 0
+  return trailFeeAtPayment(l, Math.max(1, monthsActive(l)))
+}
+
+export function trailToDate(l) {
+  if (!isClosed(l)) return 0
+  const n = monthsActive(l)
+  if (n <= 0) return 0
+  let total = 0
+  for (let i = 1; i <= n; i++) total += trailFeeAtPayment(l, i)
+  return total
+}
+
 export function trailActiveIn(l, key) {
   if (!isClosed(l) || !l.close) return false
-  return monthKey(parseDate(l.close)) <= key && key <= monthKey(today())
+  const closeKey = monthKey(parseDate(l.close))
+  if (key < closeKey || key > monthKey(today())) return false
+  const term = Number(l.loan_term_months) || 60
+  return monthDiffKeys(closeKey, key) + 1 <= term
 }
+
 export function needsFollowUp(l) {
   if (isClosed(l) || isDead(l)) return false
   const b = businessDaysSince(l.follow)
@@ -192,11 +250,11 @@ export const COLUMN_META = {
 // ---------- seed data ----------
 export function seedLoans() {
   return [
-    { id: 'DIN-001', received: '2026-02-02', name: 'Maria Santos',    phone: '787-555-0142', seller: 'RIMCO — Bayamón',  model: 'Cat DE65 GC',  amount: 48000,  intake: '2026-02-04', docs: 'Yes',     submitted: '2026-02-18', contact: '', status: 'closed',       decision: 'Approved', close: '2026-03-15', follow: '2026-03-20', notes: 'Funded. Trail active.' },
-    { id: 'DIN-002', received: '2026-04-10', name: 'James Whitfield', phone: '787-555-0199', seller: 'RIMCO — Ponce',    model: 'Cat DE150 GC', amount: 112500, intake: '2026-04-12', docs: 'Yes',     submitted: '2026-05-02', contact: '', status: 'underwriting', decision: 'Pending',  close: '',           follow: '2026-06-04', notes: 'In underwriting — awaiting conditions.' },
-    { id: 'DIN-003', received: '2026-05-22', name: 'Lena Park',       phone: '787-555-0177', seller: 'RIMCO — Carolina', model: 'Cat DE40 GC',  amount: 36800,  intake: '2026-05-24', docs: 'Pending', submitted: '',           contact: '', status: 'docs',         decision: 'Pending',  close: '',           follow: '2026-06-05', notes: 'Collecting income docs.' },
-    { id: 'DIN-004', received: '2026-04-28', name: 'Roberto Cruz',    phone: '787-555-0123', seller: 'RIMCO — Bayamón',  model: 'Cat DE110 GC', amount: 89200,  intake: '2026-05-01', docs: 'Yes',     submitted: '2026-05-20', contact: '', status: 'submitted',    decision: 'Pending',  close: '',           follow: '2026-05-26', notes: 'Submitted — needs a nudge.' },
-    { id: 'DIN-005', received: '2025-12-08', name: 'Aisha Bello',     phone: '787-555-0188', seller: 'RIMCO — Ponce',    model: 'Cat DE80 GC',  amount: 65000,  intake: '2025-12-10', docs: 'Yes',     submitted: '2025-12-22', contact: '', status: 'closed',       decision: 'Approved', close: '2026-01-10', follow: '2026-01-15', notes: 'Funded. Trail active.' },
+    { id: 'DIN-001', received: '2026-02-02', name: 'Maria Santos',    phone: '787-555-0142', seller: 'RIMCO — Bayamón',  model: 'Cat DE65 GC',  amount: 48000,  interest_rate: 10, loan_term_months: 60, intake: '2026-02-04', docs: 'Yes',     submitted: '2026-02-18', contact: '', status: 'closed',       decision: 'Approved', close: '2026-03-15', follow: '2026-03-20', notes: 'Funded. Trail active.' },
+    { id: 'DIN-002', received: '2026-04-10', name: 'James Whitfield', phone: '787-555-0199', seller: 'RIMCO — Ponce',    model: 'Cat DE150 GC', amount: 112500, interest_rate: 9,  loan_term_months: 72, intake: '2026-04-12', docs: 'Yes',     submitted: '2026-05-02', contact: '', status: 'underwriting', decision: 'Pending',  close: '',           follow: '2026-06-04', notes: 'In underwriting — awaiting conditions.' },
+    { id: 'DIN-003', received: '2026-05-22', name: 'Lena Park',       phone: '787-555-0177', seller: 'RIMCO — Carolina', model: 'Cat DE40 GC',  amount: 36800,  interest_rate: 11, loan_term_months: 48, intake: '2026-05-24', docs: 'Pending', submitted: '',           contact: '', status: 'docs',         decision: 'Pending',  close: '',           follow: '2026-06-05', notes: 'Collecting income docs.' },
+    { id: 'DIN-004', received: '2026-04-28', name: 'Roberto Cruz',    phone: '787-555-0123', seller: 'RIMCO — Bayamón',  model: 'Cat DE110 GC', amount: 89200,  interest_rate: 10, loan_term_months: 60, intake: '2026-05-01', docs: 'Yes',     submitted: '2026-05-20', contact: '', status: 'submitted',    decision: 'Pending',  close: '',           follow: '2026-05-26', notes: 'Submitted — needs a nudge.' },
+    { id: 'DIN-005', received: '2025-12-08', name: 'Aisha Bello',     phone: '787-555-0188', seller: 'RIMCO — Ponce',    model: 'Cat DE80 GC',  amount: 65000,  interest_rate: 10, loan_term_months: 60, intake: '2025-12-10', docs: 'Yes',     submitted: '2025-12-22', contact: '', status: 'closed',       decision: 'Approved', close: '2026-01-10', follow: '2026-01-15', notes: 'Funded. Trail active.' },
   ]
 }
 
@@ -212,7 +270,8 @@ export function nextId(loans) {
 export function blankLoan(loans) {
   return {
     id: nextId(loans), received: '', name: '', phone: '', seller: '', model: '',
-    amount: '', intake: '', docs: 'Pending', submitted: '', contact: '',
+    amount: '', interest_rate: '', loan_term_months: '', intake: '', docs: 'Pending',
+    submitted: '', contact: '',
     status: firstProgressId(), decision: 'Pending', close: '', follow: '', notes: '',
   }
 }

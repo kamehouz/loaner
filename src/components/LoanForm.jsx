@@ -8,7 +8,9 @@ const ALL_FIELDS = [
   { key: 'phone',     label: 'Phone',                 type: 'text' },
   { key: 'seller',    label: 'RIMCO Seller',          type: 'text' },
   { key: 'model',     label: 'Generator Model',       type: 'text' },
-  { key: 'amount',    label: 'Loan Amount',           type: 'money',    core: true, required: true },
+  { key: 'amount',          label: 'Loan Amount',          type: 'money',  core: true, required: true },
+  { key: 'interest_rate',   label: 'Interest Rate (%)',   type: 'number', core: true, placeholder: 'e.g. 10.5', step: '0.25' },
+  { key: 'loan_term_months',label: 'Loan Term (months)',  type: 'number', core: true, placeholder: 'e.g. 60',   step: '1' },
   { key: 'intake',    label: 'Intake Started',        type: 'date' },
   { key: 'docs',      label: 'Docs Complete?',        type: 'select',   options: Core.DOCS },
   { key: 'submitted', label: 'Submitted to TuCoop',   type: 'date' },
@@ -50,6 +52,8 @@ function Field({ f, value, onChange, error, columnName, onManageStatuses }) {
         })}
       </select>
     )
+  } else if (f.type === 'number') {
+    control = <input type="number" min="0" step={f.step || '1'} placeholder={f.placeholder || '0'} {...common} />
   } else {
     control = <input type="text" placeholder={f.placeholder || ''} {...common} />
   }
@@ -137,12 +141,12 @@ export function LoanForm({ loan, isNew, columns, onSave, onDelete, onClose, onMa
                 <span className="v money">{willClose ? Core.money(amt * Core.CONFIG.closePct) : '—'}</span>
               </div>
               <div className="ck">
-                <span className="k">0.5% monthly trail</span>
-                <span className="v money">{willClose ? Core.money(amt * Core.CONFIG.trailPct) : '—'}</span>
+                <span className="k">Trail — month 1</span>
+                <span className="v money">{willClose ? Core.money(amt * Core.CONFIG.trailPct / 12, true) : '—'}</span>
               </div>
               <div className="note">
-                Auto-calculated — never entered.{' '}
-                {willClose ? 'Active for the life of the loan.' : 'Shown once status is Closed.'}
+                Trail is on declining balance — reduces each month as the loan pays down.{' '}
+                {willClose ? 'Set interest rate and term above for precise figures.' : 'Shown once status is Closed.'}
               </div>
             </div>
           </div>

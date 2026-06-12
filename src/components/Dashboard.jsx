@@ -6,9 +6,9 @@ import * as Core from '../core.js'
 function TrailTracker({ loans, confirm, setConfirm }) {
   const [mk, setMk] = useState(Core.monthKey())
   const closed = loans.filter(l => Core.trailActiveIn(l, mk))
-  const total = closed.reduce((a, l) => a + Core.monthlyTrail(l), 0)
+  const total = closed.reduce((a, l) => a + Core.trailFeeForMonth(l, mk), 0)
   const got = closed.filter(l => confirm[l.id + '|' + mk])
-  const gotAmt = got.reduce((a, l) => a + Core.monthlyTrail(l), 0)
+  const gotAmt = got.reduce((a, l) => a + Core.trailFeeForMonth(l, mk), 0)
   const atCurrent = mk >= Core.monthKey()
 
   const toggle = (l) => {
@@ -63,7 +63,7 @@ function TrailTracker({ loans, confirm, setConfirm }) {
                     <div className="nm">{l.name}</div>
                     <div className="meta">{l.id} · on {Core.money(l.amount)} · since {Core.fmtDate(l.close)}</div>
                   </div>
-                  <div className="amt money">{Core.money(Core.monthlyTrail(l))}<small> /mo</small></div>
+                  <div className="amt money">{Core.money(Core.trailFeeForMonth(l, mk), true)}<small> /mo</small></div>
                   <button className={'confirm' + (on ? ' got' : '')} onClick={() => toggle(l)}>
                     <Icon name={on ? 'check' : 'bell'} size={13} />{on ? 'Deposited' : 'Mark received'}
                   </button>
@@ -111,7 +111,7 @@ function CommissionTable({ loans, onOpen }) {
                   <td className="num money">{Core.money(l.amount)}</td>
                   <td>{Core.fmtDate(l.close)}</td>
                   <td className="num money" style={{ fontWeight: 700 }}>{Core.money(Core.closingComm(l))}</td>
-                  <td className="num money">{Core.money(Core.monthlyTrail(l))}</td>
+                  <td className="num money">{Core.money(Core.monthlyTrail(l), true)}</td>
                   <td className="num">{Core.monthsActive(l)}</td>
                 </tr>
               ))}
@@ -119,7 +119,7 @@ function CommissionTable({ loans, onOpen }) {
             <tfoot><tr>
               <td>Totals</td><td /><td />
               <td className="num money">{Core.money(totC)}</td>
-              <td className="num money">{Core.money(totT)} <span className="muted" style={{ fontWeight: 600 }}>/mo</span></td>
+              <td className="num money">{Core.money(totT, true)} <span className="muted" style={{ fontWeight: 600 }}>/mo</span></td>
               <td />
             </tr></tfoot>
           </table>
