@@ -165,7 +165,7 @@ function Tracker({ session }: { session: Session }) {
 
   return (
     <div className={mobile ? 'mobile' : undefined}>
-      {store.demo && <div className="demo-banner">Demo mode: sample data saved in this browser only. Connect Supabase to share data between partners.</div>}
+      {store.demo && <div className="demo-banner">Demo with sample loans. Try anything: changes stay in your browser only and never reach the real tracker.</div>}
       <div className="shell">
         {!mobile && (
           <aside className="sidebar">

@@ -19,7 +19,7 @@ npm install
 npm run dev
 ```
 
-The app connects to the Dinio Capital Supabase project out of the box: its URL and publishable key are built into `src/data/index.ts` (both are public by design). They intentionally ignore any `VITE_SUPABASE_*` environment variables, because the Vercel project still holds the previous app's values. Run with `VITE_DEMO=1 npm run dev` for **demo mode**, which loads the sample loans from the brief, saves changes in the browser only, and accepts any email and password at sign in.
+The app connects to the Dinio Capital Supabase project out of the box: its URL and publishable key are built into `src/data/index.ts` (both are public by design). They intentionally ignore any `VITE_SUPABASE_*` environment variables, because the Vercel project still holds the previous app's values. Open `/demo` (for example https://dinioloaner.vercel.app/demo), or run `VITE_DEMO=1 npm run dev`, for **demo mode**, which loads the sample loans from the brief, saves changes in the browser only, and accepts any email and password at sign in.
 
 ```sh
 npm test          # calculation and billing tests

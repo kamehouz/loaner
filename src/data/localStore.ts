@@ -25,8 +25,10 @@ function load(): Saved {
  * Demo store: sample data saved in this browser only. Used when no Supabase
  * project is configured, so the app can be tried and developed without a backend.
  */
-export function createLocalStore(): DataStore {
+export function createLocalStore({ autoSignIn = false } = {}): DataStore {
   let db = load();
+  // On the shared demo link, skip the sign in screen and go straight to the app.
+  if (autoSignIn && !db.session) db.session = { email: 'Demo partner' };
   const listeners = new Set<(s: Session | null) => void>();
   const save = () => {
     try { localStorage.setItem(KEY, JSON.stringify(db)); } catch { /* ignore */ }

@@ -17,7 +17,11 @@ export const openedFromRecoveryLink = hash.get('type') === 'recovery';
 /** The reset or invite link was rejected (usually expired or already used). */
 export const authLinkError = hash.get('error_description')?.replace(/\+/g, ' ') ?? null;
 
-const demo = import.meta.env.VITE_DEMO === '1' || import.meta.env.MODE === 'test';
+/** The /demo address: sample data only, never touches the real database. */
+export const isDemoLink = /^\/demo\/?$/.test(window.location.pathname);
+const demo = isDemoLink || import.meta.env.VITE_DEMO === '1' || import.meta.env.MODE === 'test';
 
-export const store: DataStore = demo ? createLocalStore() : createSupabaseStore(SUPABASE_URL, SUPABASE_KEY);
+export const store: DataStore = demo
+  ? createLocalStore({ autoSignIn: isDemoLink })
+  : createSupabaseStore(SUPABASE_URL, SUPABASE_KEY);
 export type { DataStore, Session } from './store';
