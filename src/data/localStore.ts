@@ -49,6 +49,10 @@ export function createLocalStore(): DataStore {
       listeners.forEach((l) => l(null));
     },
 
+    async requestPasswordReset() { return {}; },
+    async updatePassword() { return {}; },
+    onPasswordRecovery() { return () => {}; },
+
     async listLoans() { return db.loans; },
     async createLoan(input) {
       const maxN = db.loans.reduce((m, l) => Math.max(m, parseInt(l.num.replace(/\D/g, '')) || 1000), 1000);

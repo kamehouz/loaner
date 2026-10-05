@@ -12,6 +12,12 @@ export interface DataStore {
   onSessionChange(cb: (s: Session | null) => void): () => void;
   signIn(email: string, password: string): Promise<{ error?: string }>;
   signOut(): Promise<void>;
+  /** Email a link that opens the app on the "choose a new password" screen. */
+  requestPasswordReset(email: string): Promise<{ error?: string }>;
+  /** Set a new password for the signed-in user (after following a reset link). */
+  updatePassword(password: string): Promise<{ error?: string }>;
+  /** Fires when the user arrives from a password reset link. */
+  onPasswordRecovery(cb: () => void): () => void;
 
   listLoans(): Promise<Loan[]>;
   createLoan(input: LoanInput): Promise<Loan>;

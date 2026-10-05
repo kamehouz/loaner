@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { store, type Session } from './data';
+import { openedFromRecoveryLink, store, type Session } from './data';
 import { todayIso, ymOf, type YM } from './lib/format';
 import { billingKey, type BillingRecord, type Loan, type LoanInput, type Settings } from './lib/types';
 import { LoanForm } from './components/LoanForm';
@@ -7,7 +7,7 @@ import { Logo, Toast, useIsMobile } from './components/ui';
 import { Billing } from './screens/Billing';
 import { LoanDetail } from './screens/LoanDetail';
 import { Loans } from './screens/Loans';
-import { Login } from './screens/Login';
+import { Login, SetPassword } from './screens/Login';
 import { Overview } from './screens/Overview';
 import { Projection } from './screens/Projection';
 import { SettingsScreen } from './screens/SettingsScreen';
@@ -22,13 +22,22 @@ const NAV: { key: Screen; label: string; short: string }[] = [
 
 export function App() {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
+  const [recovering, setRecovering] = useState(openedFromRecoveryLink);
   useEffect(() => {
     store.getSession().then(setSession);
-    return store.onSessionChange(setSession);
+    const offSession = store.onSessionChange(setSession);
+    const offRecovery = store.onPasswordRecovery(() => setRecovering(true));
+    return () => { offSession(); offRecovery(); };
   }, []);
 
   if (session === undefined) return <div className="loading">Loading…</div>;
   if (!session) return <Login />;
+  if (recovering) {
+    return <SetPassword email={session.email} onDone={() => {
+      setRecovering(false);
+      window.history.replaceState(null, '', window.location.pathname);
+    }} />;
+  }
   return <Tracker session={session} />;
 }
 

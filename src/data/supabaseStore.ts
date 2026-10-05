@@ -86,6 +86,18 @@ export function createSupabaseStore(url: string, anonKey: string): DataStore {
     async signOut() {
       await sb.auth.signOut();
     },
+    async requestPasswordReset(email) {
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+      return error ? { error: 'Could not send the email. Try again in a minute.' } : {};
+    },
+    async updatePassword(password) {
+      const { error } = await sb.auth.updateUser({ password });
+      return error ? { error: error.message } : {};
+    },
+    onPasswordRecovery(cb) {
+      const { data } = sb.auth.onAuthStateChange((e) => { if (e === 'PASSWORD_RECOVERY') cb(); });
+      return () => data.subscription.unsubscribe();
+    },
 
     async listLoans() {
       return must(await sb.from('tracker_loans').select(LOAN_COLS).order('loan_number')).map((r) => toLoan(r as LoanRow));

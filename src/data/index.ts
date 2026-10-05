@@ -9,6 +9,13 @@ import type { DataStore } from './store';
 const DEFAULT_URL = 'https://fcteecadouqozzctbwpp.supabase.co';
 const DEFAULT_KEY = 'sb_publishable_x3ooCTmGHCdX1hPUkqNfOQ_JAyqO2D8';
 
+// Read the reset-link markers before the Supabase client consumes and clears the URL hash.
+const hash = new URLSearchParams(window.location.hash.slice(1));
+/** The page was opened from a password reset email. */
+export const openedFromRecoveryLink = hash.get('type') === 'recovery';
+/** The reset or invite link was rejected (usually expired or already used). */
+export const authLinkError = hash.get('error_description')?.replace(/\+/g, ' ') ?? null;
+
 const env = import.meta.env;
 const url = (env.VITE_SUPABASE_URL as string | undefined) || DEFAULT_URL;
 const key = (env.VITE_SUPABASE_ANON_KEY as string | undefined) || DEFAULT_KEY;
