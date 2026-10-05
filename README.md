@@ -1,25 +1,62 @@
-# CODING AGENTS: READ THIS FIRST
+# Dinio Capital Loan Tracker
 
-This is a **handoff bundle** from Claude Design (claude.ai/design).
+Internal web app for the three Dinio Capital partners. It tracks equipment loan referrals and works out fees, payment schedules and monthly billing. It replaces the spreadsheet.
 
-A user mocked up designs in HTML/CSS/JS using an AI design tool, then exported this bundle so a coding agent can implement the designs for real.
+Screens: Overview, Loans (with Loan Detail and the Add/Edit form), Loan Projection, Billing, Settings and Login. Desktop gets a sidebar. Phones get a bottom tab bar and card layouts.
 
-## What you should do — IMPORTANT
+The design this was built from is in `project/Loan Tracker.dc.html`, with the design conversation in `chats/` and the handoff notes in `HANDOFF.md`.
 
-**Read the chat transcripts first.** There are 1 chat transcript(s) in `chats/`. The transcripts show the full back-and-forth between the user and the design assistant — they tell you **what the user actually wants** and **where they landed** after iterating. Don't skip them. The final HTML files are the output, but the chat is where the intent lives.
+## Stack
 
-**Read `project/Pipeline Tracker.html` in full.** The user had this file open when they triggered the handoff, so it's almost certainly the primary design they want built. Read it top to bottom — don't skim. Then **follow its imports**: open every file it pulls in (shared components, CSS, scripts) so you understand how the pieces fit together before you start implementing.
+- React + TypeScript + Vite
+- Supabase for Postgres and email/password auth
+- Vitest for the calculation tests
 
-**If anything is ambiguous, ask the user to confirm before you start implementing.** It's much cheaper to clarify scope up front than to build the wrong thing.
+## Running locally
 
-## About the design files
+```sh
+npm install
+cp .env.example .env.local   # optional: add Supabase URL and anon key
+npm run dev
+```
 
-The design medium is **HTML/CSS/JS** — these are prototypes, not production code. Your job is to **recreate them pixel-perfectly** in whatever technology makes sense for the target codebase (React, Vue, native, whatever fits). Match the visual output; don't copy the prototype's internal structure unless it happens to fit.
+If `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are empty, the app runs in **demo mode**. It loads the sample loans from the brief, saves changes in the browser only, and accepts any email and password at sign in.
 
-**Don't render these files in a browser or take screenshots unless the user asks you to.** Everything you need — dimensions, colors, layout rules — is spelled out in the source. Read the HTML and CSS directly; a screenshot won't tell you anything they don't.
+```sh
+npm test          # calculation and billing tests
+npm run build     # typecheck + production build into dist/
+```
 
-## Bundle contents
+## Setting up Supabase
 
-- `README.md` — this file
-- `chats/` — conversation transcripts (read these!)
-- `project/` — the `Lending Commision Tracker` project files (HTML prototypes, assets, components)
+1. Create a Supabase project.
+2. Run `supabase/migrations/20261005000000_loan_tracker.sql` in the SQL editor, or use `supabase db push`. You can also run `supabase/seed.sql` to load the sample loans.
+3. Go to **Authentication → Sign In / Providers** and turn off **Allow new users to sign up**. Access is invite only.
+4. Go to **Authentication → Users** and invite each partner by email.
+5. Put the project URL and anon key (from **Project Settings → API**) in `.env.local`, or in your hosting provider's environment variables.
+
+Every signed-in partner has the same full access, which Row Level Security enforces. Loans are never deleted. They get marked Dead instead.
+
+## How the numbers work
+
+All of this lives in `src/lib/calc.ts` and `src/lib/billing.ts`.
+
+- **Deposit** = equipment cost × deposit %. **Financed** = equipment cost − deposit.
+- **Monthly payment**: a standard amortizing payment on the financed amount at the loan's interest rate, over the term. The term can be any whole number of months from 1 to 600.
+- **Origination fee** and **Legal/closing fee**: a percent of equipment cost (1% by default, editable in Settings). Both are billed once, in the month the loan closes. Dead loans are skipped.
+- **Referral fee**: the interest portion of payment *n* on a hypothetical loan of the **full equipment cost**, at the referral rate (0.5% a year by default, editable in Settings), over the same term. It is billed monthly from the first payment date through the last, for **Closed** loans only. Each month is rounded to the cent so that the running total stays exact. For Client A ($38,127.43, 60 months) that gives $15.89 for payment 1, $15.62 for payment 2 and $486.52 over the life of the loan. Unit tests cover all three.
+- Money shows as `$38,127.43`. Dates show and are typed as day/month/year.
+
+Changing a rate in Settings recalculates every loan, including months already billed.
+
+## Project layout
+
+```
+src/
+  lib/          formatting, loan maths, billing rules, sample data, tests
+  data/         DataStore interface, Supabase and demo implementations
+  screens/      Overview, Loans, LoanDetail, Projection, Billing, Settings, Login
+  components/   shared UI, Add/Edit loan form
+  styles.css    design tokens and components, taken from the prototype
+supabase/       schema migration and seed data
+```

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>html,body{margin:0;background:#F5F7F9;color:#13202B;font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}*{box-sizing:border-box}a{color:#2D6A8E}a:hover{color:#173E57}</style>
+</helmet>
+<div style="max-width:1080px;margin:0 auto;padding:48px 24px 80px;display:flex;flex-direction:column;gap:48px;">
+  <div style="display:flex;flex-direction:column;gap:8px;">
+    <span style="font-size:13px;font-weight:500;color:#2D6A8E;">Dinio Capital Loan Tracker</span>
+    <h1 style="margin:0;font-size:32px;font-weight:600;letter-spacing:-0.01em;">Developer notes</h1>
+    <p style="margin:0;font-size:15px;color:#4A5865;max-width:640px;line-height:1.55;text-wrap:pretty;">Tokens, components, spacing and behaviour for building the app. The working prototype is <a href="Loan Tracker.dc.html">Loan Tracker</a>; every screen there is clickable.</p>
+  </div>
+
+  <section style="display:flex;flex-direction:column;gap:16px;">
+    <h2 style="margin:0;font-size:20px;font-weight:600;">Colour</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;">
+      <div style="background:#fff;border:1px solid #E2E8ED;border-radius:12px;overflow:hidden;"><div style="height:56px;background:#9ECAE1;"></div><div style="padding:10px 12px;font-size:13px;display:flex;flex-direction:column;gap:2px;"><b style="font-weight:600;">Brand blue</b><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#4A5865;">#9ECAE1</span><span style="color:#7A8794;">Logo, active tab bar, accents</span></div></div>
+      <div style="background:#fff;border:1px solid #E2E8ED;border-radius:12px;overflow:hidden;"><div style="height:56px;background:#2D6A8E;"></div><div style="padding:10px 12px;font-size:13px;display:flex;flex-direction:column;gap:2px;"><b style="font-weight:600;">Action blue</b><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#4A5865;">#2D6A8E / hover #245A79</span><span style="color:#7A8794;">Buttons, links (brand is too light for white text)</span></div></div>
+      <div style="background:#fff;border:1px solid #E2E8ED;border-radius:12px;overflow:hidden;"><div style="height:56px;background:#173E57;"></div><div style="padding:10px 12px;font-size:13px;display:flex;flex-direction:column;gap:2px;"><b style="font-weight:600;">Deep blue</b><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#4A5865;">#173E57</span><span style="color:#7A8794;">Text on blue tints</span></div></div>
+      <div style="background:#fff;border:1px solid #E2E8ED;border-radius:12px;overflow:hidden;"><div style="height:56px;background:#EEF6FB;"></div><div style="padding:10px 12px;font-size:13px;display:flex;flex-direction:column;gap:2px;"><b style="font-weight:600;">Blue tint</b><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#4A5865;">#EEF6FB · #DCEDF7 · #F4F8FB</span><span style="color:#7A8794;">Hover, current row, calculated cells</span></div></div>
+      <div style="background:#fff;border:1px solid #E2E8ED;border-radius:12px;overflow:hidden;"><div style="height:56px;background:#EAF6EF;"></div><div style="padding:10px 12px;font-size:13px;display:flex;flex-direction:column;gap:2px;"><b style="font-weight:600;">Positive</b><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#4A5865;">#EAF6EF · text #23774A</span><span style="color:#7A8794;">Billed rows, Closed, totals</span></div></div>
+      <div style="background:#fff;border:1px solid #E2E8ED;border-radius:12px;overflow:hidden;"><div style="height:56px;background:#F5F7F9;"></div><div style="padding:10px 12px;font-size:13px;display:flex;flex-direction:column;gap:2px;"><b style="font-weight:600;">Surfaces</b><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#4A5865;">#F5F7F9 page · #FFF card</span><span style="color:#7A8794;">Border #E2E8ED, row line #EEF2F5</span></div></div>
+      <div style="background:#fff;border:1px solid #E2E8ED;border-radius:12px;overflow:hidden;"><div style="height:56px;background:#13202B;"></div><div style="padding:10px 12px;font-size:13px;display:flex;flex-direction:column;gap:2px;"><b style="font-weight:600;">Ink</b><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#4A5865;">#13202B · #4A5865 · #7A8794</span><span style="color:#7A8794;">Primary, secondary, tertiary text</span></div></div>
+      <div style="background:#fff;border:1px solid #E2E8ED;border-radius:12px;overflow:hidden;"><div style="height:56px;background:#A63D2F;"></div><div style="padding:10px 12px;font-size:13px;display:flex;flex-direction:column;gap:2px;"><b style="font-weight:600;">Danger</b><span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#4A5865;">#A63D2F</span><span style="color:#7A8794;">Mark as dead, form errors only</span></div></div>
+    </div>
+  </section>
+
+  <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;">
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <h2 style="margin:0;font-size:20px;font-weight:600;">Type</h2>
+      <div style="background:#fff;border:1px solid #E2E8ED;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;"><span style="font-size:26px;font-weight:600;">Page title</span><span style="font-size:12px;color:#7A8794;">26 / 600</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;"><span style="font-size:30px;font-weight:600;font-variant-numeric:tabular-nums;">$1,175.62</span><span style="font-size:12px;color:#7A8794;">24–34 / 600 KPI</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;"><span style="font-size:16px;font-weight:600;">Section heading</span><span style="font-size:12px;color:#7A8794;">15–16 / 600</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;"><span style="font-size:14.5px;">Table and body text</span><span style="font-size:12px;color:#7A8794;">14–14.5 / 400</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;"><span style="font-size:12.5px;font-weight:500;color:#7A8794;">Column header, label</span><span style="font-size:12px;color:#7A8794;">12.5–13 / 500</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#4A5865;">DC-1001</span><span style="font-size:12px;color:#7A8794;">Plex Mono 13 — Loan # only</span></div>
+        <p style="margin:0;font-size:13px;color:#4A5865;line-height:1.5;">IBM Plex Sans throughout. All numbers use <code>font-variant-numeric: tabular-nums</code> and are right-aligned in tables.</p>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <h2 style="margin:0;font-size:20px;font-weight:600;">Spacing &amp; shape</h2>
+      <div style="background:#fff;border:1px solid #E2E8ED;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.5;">
+        <div style="display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #EEF2F5;padding-bottom:10px;"><span style="color:#4A5865;">Base unit</span><span>4px; use 4, 8, 12, 16, 20, 24, 28, 32, 48</span></div>
+        <div style="display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #EEF2F5;padding-bottom:10px;"><span style="color:#4A5865;">Page padding</span><span>40/48px desktop · 20/16px phone</span></div>
+        <div style="display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #EEF2F5;padding-bottom:10px;"><span style="color:#4A5865;">Content max width</span><span>1240px</span></div>
+        <div style="display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #EEF2F5;padding-bottom:10px;"><span style="color:#4A5865;">Section gap</span><span>24–28px; card grid gap 16px</span></div>
+        <div style="display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #EEF2F5;padding-bottom:10px;"><span style="color:#4A5865;">Card</span><span>white, 1px border, radius 14, padding 20–24</span></div>
+        <div style="display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #EEF2F5;padding-bottom:10px;"><span style="color:#4A5865;">Table cell</span><span>14–15px × 16–20px; header 12px</span></div>
+        <div style="display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #EEF2F5;padding-bottom:10px;"><span style="color:#4A5865;">Controls</span><span>44px tall, radius 10</span></div>
+        <div style="display:flex;justify-content:space-between;gap:12px;"><span style="color:#4A5865;">Breakpoint</span><span>&lt; 760px → phone layout</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:16px;">
+    <h2 style="margin:0;font-size:20px;font-weight:600;">Components</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;">
+      <div style="background:#fff;border:1px solid #E2E8ED;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px;">
+        <span style="font-size:14px;font-weight:600;">Buttons</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <span style="height:44px;border-radius:10px;background:#2D6A8E;color:#fff;font-size:14.5px;font-weight:600;padding:0 18px;display:flex;align-items:center;">Primary</span>
+          <span style="height:44px;border-radius:10px;background:#fff;border:1px solid #E2E8ED;font-size:14px;font-weight:500;padding:0 16px;display:flex;align-items:center;">Secondary</span>
+          <span style="height:44px;border-radius:10px;background:#fff;border:1px solid #EBD3CF;color:#A63D2F;font-size:14px;font-weight:500;padding:0 16px;display:flex;align-items:center;">Danger</span>
+        </div>
+        <span style="font-size:13px;color:#4A5865;line-height:1.5;">One primary action per screen. "Copy breakdown" uses the blue-tint variant.</span>
+      </div>
+      <div style="background:#fff;border:1px solid #E2E8ED;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px;">
+        <span style="font-size:14px;font-weight:600;">Status chip</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <span style="height:24px;padding:0 10px;border-radius:999px;font-size:12.5px;font-weight:500;background:#DCEDF7;color:#173E57;display:flex;align-items:center;">Pipeline</span>
+          <span style="height:24px;padding:0 10px;border-radius:999px;font-size:12.5px;font-weight:500;background:#D5EEDF;color:#1B5E3A;display:flex;align-items:center;">Closed</span>
+          <span style="height:24px;padding:0 10px;border-radius:999px;font-size:12.5px;font-weight:500;background:#EFF1F3;color:#5E6973;display:flex;align-items:center;">Dead</span>
+        </div>
+        <span style="font-size:13px;color:#4A5865;line-height:1.5;">24px pill. Dead rows also mute their text to #7A8794.</span>
+      </div>
+      <div style="background:#fff;border:1px solid #E2E8ED;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px;">
+        <span style="font-size:14px;font-weight:600;">Month picker</span>
+        <div style="display:flex;align-items:center;gap:2px;background:#fff;border:1px solid #E2E8ED;border-radius:12px;padding:3px;align-self:flex-start;">
+          <span style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:#2D6A8E;">‹</span><span style="min-width:150px;text-align:center;font-weight:600;font-size:15px;">October 2026</span><span style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:#2D6A8E;">›</span>
+        </div>
+        <span style="font-size:13px;color:#4A5865;line-height:1.5;">Shared month state between Overview and Billing. A "This month" link appears when you navigate away.</span>
+      </div>
+      <div style="background:#fff;border:1px solid #E2E8ED;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px;">
+        <span style="font-size:14px;font-weight:600;">Table cells</span>
+        <div style="display:grid;grid-template-columns:1fr 1fr;border:1px solid #E2E8ED;border-radius:10px;overflow:hidden;font-size:14px;">
+          <span style="padding:10px 12px;font-size:12px;color:#7A8794;background:#FAFBFC;">Typed</span><span style="padding:10px 12px;font-size:12px;color:#2D6A8E;background:#EDF4F9;">Calculated</span>
+          <span style="padding:12px;text-align:right;font-variant-numeric:tabular-nums;">$38,127.43</span><span style="padding:12px;text-align:right;font-variant-numeric:tabular-nums;background:#F4F8FB;color:#2B4B60;">$791.28</span>
+        </div>
+        <span style="font-size:13px;color:#4A5865;line-height:1.5;">Calculated columns: #F4F8FB fill, blue header. Never editable.</span>
+      </div>
+      <div style="background:#fff;border:1px solid #E2E8ED;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px;">
+        <span style="font-size:14px;font-weight:600;">Billing row states</span>
+        <div style="display:flex;flex-direction:column;border:1px solid #E2E8ED;border-radius:10px;overflow:hidden;font-size:14px;">
+          <span style="padding:12px;display:flex;justify-content:space-between;"><span>Not billed</span><span>#FFFFFF</span></span>
+          <span style="padding:12px;display:flex;justify-content:space-between;background:#EAF6EF;color:#1B5E3A;"><span>Billed</span><span>#EAF6EF</span></span>
+        </div>
+        <span style="font-size:13px;color:#4A5865;line-height:1.5;">Ticking Billed fills Date billed with today if empty. Unticking keeps date and invoice #.</span>
+      </div>
+      <div style="background:#fff;border:1px solid #E2E8ED;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px;">
+        <span style="font-size:14px;font-weight:600;">Empty state</span>
+        <div style="border:1px dashed #C9D5DE;border-radius:12px;padding:20px;text-align:center;font-size:14px;display:flex;flex-direction:column;gap:4px;"><b style="font-weight:600;">Nothing to bill in July 2026</b><span style="color:#4A5865;font-size:13px;">One sentence on why, plus the next action.</span></div>
+        <span style="font-size:13px;color:#4A5865;line-height:1.5;">Dashed border, centred. Used for no loans, nothing to bill, no referral fees.</span>
+      </div>
+    </div>
+  </section>
+
+  <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;">
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <h2 style="margin:0;font-size:20px;font-weight:600;">Formatting</h2>
+      <ul style="margin:0;padding-left:18px;font-size:14.5px;line-height:1.7;color:#13202B;">
+        <li>Money: <code>$</code> + en-US grouping, always 2 decimals: $38,127.43</li>
+        <li>Dates: dd/mm/yyyy everywhere, including inputs (text inputs, not native date pickers)</li>
+        <li>Rates: 2 decimals + %: 8.99%</li>
+        <li>Loan #: auto-assigned, DC-1000 upwards, never reused</li>
+      </ul>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <h2 style="margin:0;font-size:20px;font-weight:600;">Calculations</h2>
+      <ul style="margin:0;padding-left:18px;font-size:14.5px;line-height:1.7;color:#13202B;">
+        <li>Deposit $ = cost × deposit %; Financed = cost − deposit</li>
+        <li>Monthly payment = standard amortisation, rate/12, term months; round to cents, last payment clears balance</li>
+        <li>Origination and Legal/closing = 1% of equipment cost, billed in the closing month</li>
+        <li>Referral fee: billed monthly per payment for Closed loans. The prototype uses a placeholder curve matched to Client A; swap in the bank's real schedule</li>
+        <li>"So far" totals = Closed loans with closing date on or before today. Dead loans are excluded everywhere</li>
+      </ul>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:16px;">
+    <h2 style="margin:0;font-size:20px;font-weight:600;">Phone layout</h2>
+    <p style="margin:0;font-size:14.5px;color:#4A5865;line-height:1.55;max-width:680px;">Below 760px the sidebar becomes a bottom tab bar, tables become cards (Loans, Overview, Billing), and the projection table scrolls sideways. The add-loan form stays a centred sheet with stacked fields.</p>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;">
+      <div style="display:flex;flex-direction:column;gap:8px;"><span style="font-size:13px;font-weight:500;color:#4A5865;">Billing</span><iframe src="Loan Tracker.dc.html#billing" title="Billing on phone" style="width:390px;max-width:100%;height:760px;border:1px solid #E2E8ED;border-radius:24px;background:#fff;"></iframe></div>
+      <div style="display:flex;flex-direction:column;gap:8px;"><span style="font-size:13px;font-weight:500;color:#4A5865;">Loans</span><iframe src="Loan Tracker.dc.html#loans" title="Loans on phone" style="width:390px;max-width:100%;height:760px;border:1px solid #E2E8ED;border-radius:24px;background:#fff;"></iframe></div>
+    </div>
+  </section>
+</div>
+</x-dc>
+</body>
+</html>
