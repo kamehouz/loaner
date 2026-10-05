@@ -81,14 +81,19 @@ export function createSupabaseStore(url: string, anonKey: string): DataStore {
     },
     async signIn(email, password) {
       const { error } = await sb.auth.signInWithPassword({ email, password });
-      return error ? { error: 'That email and password don’t match an invited account.' } : {};
+      if (!error) return {};
+      if (error.code === 'email_not_confirmed') return { error: 'This account hasn’t been confirmed yet. Ask a partner to confirm it in Supabase.' };
+      if (error.code === 'invalid_credentials') return { error: 'That email and password don’t match an invited account.' };
+      return { error: `Couldn’t sign in: ${error.message}` };
     },
     async signOut() {
       await sb.auth.signOut();
     },
     async requestPasswordReset(email) {
       const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
-      return error ? { error: 'Could not send the email. Try again in a minute.' } : {};
+      if (!error) return {};
+      if (error.status === 429) return { error: 'Too many emails sent recently. Wait an hour and try again.' };
+      return { error: `Couldn’t send the email: ${error.message}` };
     },
     async updatePassword(password) {
       const { error } = await sb.auth.updateUser({ password });
