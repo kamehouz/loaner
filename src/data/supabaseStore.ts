@@ -88,29 +88,29 @@ export function createSupabaseStore(url: string, anonKey: string): DataStore {
     },
 
     async listLoans() {
-      return must(await sb.from('loans').select(LOAN_COLS).order('loan_number')).map((r) => toLoan(r as LoanRow));
+      return must(await sb.from('tracker_loans').select(LOAN_COLS).order('loan_number')).map((r) => toLoan(r as LoanRow));
     },
     async createLoan(input) {
-      return toLoan(must(await sb.from('loans').insert(fromLoan(input)).select(LOAN_COLS).single()) as LoanRow);
+      return toLoan(must(await sb.from('tracker_loans').insert(fromLoan(input)).select(LOAN_COLS).single()) as LoanRow);
     },
     async updateLoan(id, patch) {
-      return toLoan(must(await sb.from('loans').update(fromLoan(patch)).eq('id', id).select(LOAN_COLS).single()) as LoanRow);
+      return toLoan(must(await sb.from('tracker_loans').update(fromLoan(patch)).eq('id', id).select(LOAN_COLS).single()) as LoanRow);
     },
 
     async listBilling() {
-      return must(await sb.from('billing_records').select('loan_id, fee_type, period, billed, date_billed, invoice_number')).map((r) => toBilling(r as BillingRow));
+      return must(await sb.from('tracker_billing').select('loan_id, fee_type, period, billed, date_billed, invoice_number')).map((r) => toBilling(r as BillingRow));
     },
     async saveBilling(rec) {
       const row = { loan_id: rec.loanId, fee_type: rec.kind, period: rec.period, billed: rec.billed, date_billed: rec.dateBilled, invoice_number: rec.invoice };
-      return toBilling(must(await sb.from('billing_records').upsert(row, { onConflict: 'loan_id,fee_type,period' }).select().single()) as BillingRow);
+      return toBilling(must(await sb.from('tracker_billing').upsert(row, { onConflict: 'loan_id,fee_type,period' }).select().single()) as BillingRow);
     },
 
     async getSettings() {
-      return toSettings(must(await sb.from('settings').select('referral_rate_pct, origination_pct, legal_pct').eq('id', 1).single()) as SettingsRow);
+      return toSettings(must(await sb.from('tracker_settings').select('referral_rate_pct, origination_pct, legal_pct').eq('id', 1).single()) as SettingsRow);
     },
     async saveSettings(s) {
       const row = { referral_rate_pct: s.referralRatePct, origination_pct: s.originationPct, legal_pct: s.legalPct };
-      return toSettings(must(await sb.from('settings').update(row).eq('id', 1).select('referral_rate_pct, origination_pct, legal_pct').single()) as SettingsRow);
+      return toSettings(must(await sb.from('tracker_settings').update(row).eq('id', 1).select('referral_rate_pct, origination_pct, legal_pct').single()) as SettingsRow);
     },
   };
 }

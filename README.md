@@ -16,11 +16,10 @@ The design this was built from is in `project/Loan Tracker.dc.html`, with the de
 
 ```sh
 npm install
-cp .env.example .env.local   # optional: add Supabase URL and anon key
 npm run dev
 ```
 
-If `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are empty, the app runs in **demo mode**. It loads the sample loans from the brief, saves changes in the browser only, and accepts any email and password at sign in.
+The app connects to the Dinio Capital Supabase project out of the box: its URL and publishable key are built into `src/data/index.ts` (both are public by design). `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` override them. Run with `VITE_DEMO=1 npm run dev` for **demo mode**, which loads the sample loans from the brief, saves changes in the browser only, and accepts any email and password at sign in.
 
 ```sh
 npm test          # calculation and billing tests
@@ -30,10 +29,10 @@ npm run build     # typecheck + production build into dist/
 ## Setting up Supabase
 
 1. Create a Supabase project.
-2. Run `supabase/migrations/20261005000000_loan_tracker.sql` in the SQL editor, or use `supabase db push`. You can also run `supabase/seed.sql` to load the sample loans.
+2. Run `supabase/migrations/20261005120000_loan_tracker.sql` in the SQL editor, or use `supabase db push`. You can also run `supabase/seed.sql` to load the sample loans. Every table is prefixed `tracker_`, so this is safe in a database shared with other apps, and the script can be run again safely.
 3. Go to **Authentication → Sign In / Providers** and turn off **Allow new users to sign up**. Access is invite only.
 4. Go to **Authentication → Users** and invite each partner by email.
-5. Put the project URL and anon key (from **Project Settings → API**) in `.env.local`, or in your hosting provider's environment variables.
+5. To point the app at a different project, set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (from **Project Settings → API**) in `.env.local` or in Vercel's environment variables.
 
 Every signed-in partner has the same full access, which Row Level Security enforces. Loans are never deleted. They get marked Dead instead.
 
