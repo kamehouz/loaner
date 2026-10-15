@@ -146,7 +146,7 @@ function BillingLine({ item, rec, today, onSave, mobile, showClient }: LineProps
 
   return (
     <div className={'trow tbody-row bill-cols' + (billed ? ' billed' : '')}>
-      <div className="client-cell">{showClient && <><b>{item.loan.client}</b><small>{item.loan.num}</small></>}</div>
+      <div className="client-cell">{showClient && <><b>{item.loan.client}</b><small>{item.loan.num ?? 'No loan #'}</small></>}</div>
       <span>{item.type}</span>
       <span className="detail">{item.detail}</span>
       <span className="amount">{money(item.amount)}</span>

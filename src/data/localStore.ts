@@ -34,6 +34,10 @@ export function createLocalStore({ autoSignIn = false } = {}): DataStore {
     try { localStorage.setItem(KEY, JSON.stringify(db)); } catch { /* ignore */ }
   };
 
+  const checkNumberFree = (num: string | null, selfId: string | null) => {
+    if (num && db.loans.some((l) => l.num === num && l.id !== selfId)) throw new Error('Another loan already has that loan number.');
+  };
+
   return {
     demo: true,
     async getSession() { return db.session; },
@@ -57,13 +61,14 @@ export function createLocalStore({ autoSignIn = false } = {}): DataStore {
 
     async listLoans() { return db.loans; },
     async createLoan(input) {
-      const maxN = db.loans.reduce((m, l) => Math.max(m, parseInt(l.num.replace(/\D/g, '')) || 1000), 1000);
-      const loan: Loan = { id: 'l' + Date.now(), num: 'DC-' + (maxN + 1), ...input };
+      checkNumberFree(input.num, null);
+      const loan: Loan = { id: 'l' + Date.now(), ...input };
       db = { ...db, loans: [...db.loans, loan] };
       save();
       return loan;
     },
     async updateLoan(id, patch) {
+      if (patch.num !== undefined) checkNumberFree(patch.num, id);
       let updated: Loan | undefined;
       db = { ...db, loans: db.loans.map((l) => (l.id === id ? (updated = { ...l, ...patch }) : l)) };
       if (!updated) throw new Error('Loan not found');

@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { calc } from '../lib/calc';
+import { calcLoan, dealSplit } from '../lib/calc';
 import { fmtDate, money, pct, rate } from '../lib/format';
-import type { Loan, LoanStatus, Settings } from '../lib/types';
+import { missingInfo, type Loan, type LoanStatus, type Settings } from '../lib/types';
 import { Chip, PageHead } from '../components/ui';
 
 type Filter = 'All' | LoanStatus;
@@ -19,7 +19,19 @@ export function Loans({ loans, settings, mobile, onAdd, onOpenLoan }: Props) {
   const [filter, setFilter] = useState<Filter>('All');
   const nActive = loans.filter((l) => l.status !== 'Dead').length;
   const filtered = filter === 'All' ? loans : loans.filter((l) => l.status === filter);
-  const rows = [...filtered].sort((x, y) => y.num.localeCompare(x.num)).map((l) => ({ l, c: calc(l, settings) }));
+  // Loans still waiting on a bank number come first, then newest number first.
+  const byNumber = (x: Loan, y: Loan) => (x.num === null ? 0 : 1) - (y.num === null ? 0 : 1) || (y.num ?? '').localeCompare(x.num ?? '');
+  const rows = [...filtered].sort(byNumber).map((l) => {
+    const c = calcLoan(l, settings);
+    const split = l.cost != null ? dealSplit(l.cost, l.depositPct) : null;
+    const missing = l.status === 'Pipeline' ? missingInfo(l) : [];
+    return { l, c, split, missing };
+  });
+  const dash = '—';
+  const amount = (n: number | null | undefined) => (n == null ? dash : money(n));
+  const needs = (missing: string[]) => missing.length > 0 && (
+    <small className="needs" title={`Still needed: ${missing.join(', ')}`}>Missing {missing.length} {missing.length === 1 ? 'detail' : 'details'}</small>
+  );
 
   return (
     <div className="screen">
@@ -54,17 +66,17 @@ export function Loans({ loans, settings, mobile, onAdd, onOpenLoan }: Props) {
             <div className="card no-match">No loans with this status.</div>
           ) : mobile ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {rows.map(({ l, c }) => (
+              {rows.map(({ l, c, missing }) => (
                 <div key={l.id} className={'card loan-card' + (l.status === 'Dead' ? ' dead' : '')} onClick={() => onOpenLoan(l.id)}>
                   <div className="loan-card-head">
-                    <div><b>{l.client}</b><span className="mono" style={{ fontSize: 12.5, color: 'var(--ink-2)' }}>{l.num}</span></div>
+                    <div><b>{l.client}</b><span className="mono" style={{ fontSize: 12.5, color: 'var(--ink-2)' }}>{l.num ?? 'No loan number yet'}</span>{needs(missing)}</div>
                     <Chip status={l.status} />
                   </div>
                   <div className="loan-card-grid">
-                    <div><span>Equipment cost</span><span>{money(l.cost)}</span></div>
-                    <div><span>Monthly payment</span><span style={{ fontWeight: 500 }}>{money(c.pmt)}</span></div>
+                    <div><span>Equipment cost</span><span>{amount(l.cost)}</span></div>
+                    <div><span>Monthly payment</span><span style={{ fontWeight: 500 }}>{amount(c?.pmt)}</span></div>
                     <div><span>Closing date</span><span>{fmtDate(l.closingDate)}</span></div>
-                    <div><span>Term · Interest</span><span>{l.term} mo · {rate(l.rate)}</span></div>
+                    <div><span>Term · Interest</span><span>{l.term == null ? dash : `${l.term} mo`} · {l.rate == null ? dash : rate(l.rate)}</span></div>
                   </div>
                 </div>
               ))}
@@ -77,20 +89,20 @@ export function Loans({ loans, settings, mobile, onAdd, onOpenLoan }: Props) {
                   <span className="r">Equipment cost</span><span className="r">Deposit %</span><span className="r">Interest</span><span className="r">Term</span>
                   <span className="r calc-col">Deposit $</span><span className="r calc-col">Financed</span><span className="r calc-col">Monthly payment</span>
                 </div>
-                {rows.map(({ l, c }) => (
+                {rows.map(({ l, c, split, missing }) => (
                   <div key={l.id} className={'trow tbody-row loan-cols clickable' + (l.status === 'Dead' ? ' dead' : '')} onClick={() => onOpenLoan(l.id)}>
-                    <span className="mono" style={{ fontSize: 13, color: 'var(--ink-2)' }}>{l.num}</span>
-                    <span style={{ fontWeight: 500 }}>{l.client}</span>
+                    <span className="mono" style={{ fontSize: 13, color: 'var(--ink-2)' }}>{l.num ?? dash}</span>
+                    <span><span style={{ fontWeight: 500 }}>{l.client}</span>{needs(missing)}</span>
                     <span className="status-cell"><Chip status={l.status} /></span>
                     <span>{fmtDate(l.closingDate)}</span>
                     <span>{fmtDate(l.firstPaymentDate)}</span>
-                    <span className="r">{money(l.cost)}</span>
-                    <span className="r">{pct(l.depositPct)}</span>
-                    <span className="r">{rate(l.rate)}</span>
-                    <span className="r">{l.term}</span>
-                    <span className="r calc-col">{money(c.deposit)}</span>
-                    <span className="r calc-col">{money(c.financed)}</span>
-                    <span className="r calc-col" style={{ fontWeight: 500 }}>{money(c.pmt)}</span>
+                    <span className="r">{amount(l.cost)}</span>
+                    <span className="r">{l.cost == null ? dash : pct(l.depositPct)}</span>
+                    <span className="r">{l.rate == null ? dash : rate(l.rate)}</span>
+                    <span className="r">{l.term ?? dash}</span>
+                    <span className="r calc-col">{amount(split?.deposit)}</span>
+                    <span className="r calc-col">{amount(split?.financed)}</span>
+                    <span className="r calc-col" style={{ fontWeight: 500 }}>{amount(c?.pmt)}</span>
                   </div>
                 ))}
               </div>

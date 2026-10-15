@@ -1,4 +1,4 @@
-import { calc } from '../lib/calc';
+import { calcLoan } from '../lib/calc';
 import { billingItems } from '../lib/billing';
 import { money, r2, ymLabel, type YM } from '../lib/format';
 import type { Loan, Settings } from '../lib/types';
@@ -19,7 +19,7 @@ export function Overview({ loans, settings, today, ym, currentYm, onMonth, onOpe
   const closed = loans.filter((l) => l.status === 'Closed');
   const pipe = loans.filter((l) => l.status === 'Pipeline');
   // Fees "so far" count closed loans whose closing date has passed.
-  const closedCalc = closed.filter((l) => l.closingDate <= today).map((l) => calc(l, settings));
+  const closedCalc = closed.filter((l) => l.closingDate && l.closingDate <= today).flatMap((l) => calcLoan(l, settings) ?? []);
   const refItems = billingItems(loans, ym, settings).filter((i) => i.kind === 'ref');
   const monthRef = r2(refItems.reduce((t, i) => t + i.amount, 0));
   const label = ymLabel(ym);
@@ -34,12 +34,12 @@ export function Overview({ loans, settings, today, ym, currentYm, onMonth, onOpe
         <div className="card stat">
           <span className="label">Closed loans</span>
           <span className="big">{closed.length}</span>
-          <span className="sub-strong" style={{ color: 'var(--green)' }}>{money(closed.reduce((t, l) => t + l.cost, 0))} closed</span>
+          <span className="sub-strong" style={{ color: 'var(--green)' }}>{money(closed.reduce((t, l) => t + (l.cost ?? 0), 0))} closed</span>
         </div>
         <div className="card stat">
           <span className="label">Pipeline loans</span>
           <span className="big">{pipe.length}</span>
-          <span className="sub-strong" style={{ color: 'var(--blue)' }}>{money(pipe.reduce((t, l) => t + l.cost, 0))} in pipeline</span>
+          <span className="sub-strong" style={{ color: 'var(--blue)' }}>{money(pipe.reduce((t, l) => t + (l.cost ?? 0), 0))} in pipeline</span>
         </div>
         <div className="card stat">
           <span className="label">Origination fees so far</span>
@@ -68,13 +68,13 @@ export function Overview({ loans, settings, today, ym, currentYm, onMonth, onOpe
           )}
           {refItems.map((i) => mobile ? (
             <div key={i.key} className="m-row clickable" onClick={() => onOpenLoan(i.loan.id)}>
-              <div><b>{i.loan.client}</b><small>{i.loan.num} · Payment {i.pmtN} of {i.loan.term}</small></div>
+              <div><b>{i.loan.client}</b><small>{i.loan.num ?? 'No loan number'} · Payment {i.pmtN} of {i.loan.term}</small></div>
               <span>{money(i.amount)}</span>
             </div>
           ) : (
             <div key={i.key} className="trow tbody-row ov-cols clickable" onClick={() => onOpenLoan(i.loan.id)}>
               <span style={{ fontWeight: 500 }}>{i.loan.client}</span>
-              <span className="mono" style={{ fontSize: 13, color: 'var(--ink-2)' }}>{i.loan.num}</span>
+              <span className="mono" style={{ fontSize: 13, color: 'var(--ink-2)' }}>{i.loan.num ?? '—'}</span>
               <span><Chip status={i.loan.status} /></span>
               <span className="num" style={{ color: 'var(--ink-2)' }}>{i.pmtN} of {i.loan.term}</span>
               <span className="num r" style={{ fontWeight: 500 }}>{money(i.amount)}</span>

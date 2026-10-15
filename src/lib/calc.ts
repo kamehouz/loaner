@@ -1,6 +1,15 @@
 import { addMonths, r2, ymOf, type YM } from './format';
 import type { Loan, Settings } from './types';
 
+/** The loan fields a payment schedule needs. */
+export interface CalcInput {
+  cost: number;
+  depositPct: number;
+  rate: number;
+  term: number;
+  firstPaymentDate: string;
+}
+
 export interface ScheduleRow {
   n: number;
   /** ISO payment date */
@@ -60,10 +69,20 @@ export function referralSchedule(equipmentCost: number, term: number, referralRa
   return fees;
 }
 
+/** Deposit in dollars and the amount left to finance. */
+export function dealSplit(cost: number, depositPct: number) {
+  const deposit = r2((cost * depositPct) / 100);
+  return { deposit, financed: r2(cost - deposit) };
+}
+
+/** Origination and legal/closing fees depend only on the equipment cost. */
+export function upfrontFees(cost: number, settings: Settings) {
+  return { orig: r2((cost * settings.originationPct) / 100), legal: r2((cost * settings.legalPct) / 100) };
+}
+
 /** Everything derived from a loan's typed fields: deposit, payment, schedule, fees. */
-export function calc(l: Pick<Loan, 'cost' | 'depositPct' | 'rate' | 'term' | 'firstPaymentDate'>, settings: Settings): LoanCalc {
-  const deposit = r2((l.cost * l.depositPct) / 100);
-  const financed = r2(l.cost - deposit);
+export function calc(l: CalcInput, settings: Settings): LoanCalc {
+  const { deposit, financed } = dealSplit(l.cost, l.depositPct);
   const T = l.term, r = l.rate / 1200;
   const monthly = r2(pmt(r, T, financed));
   const referral = referralSchedule(l.cost, T, settings.referralRatePct);
@@ -80,8 +99,7 @@ export function calc(l: Pick<Loan, 'cost' | 'depositPct' | 'rate' | 'term' | 'fi
     rows.push({ n, date, ym: ymOf(date), principal: pr, interest: int, payment: r2(pr + int), balance: bal, referral: referral[n - 1] });
     tp += pr; ti += int; tpay += pr + int; tref += referral[n - 1];
   }
-  const orig = r2((l.cost * settings.originationPct) / 100);
-  const legal = r2((l.cost * settings.legalPct) / 100);
+  const { orig, legal } = upfrontFees(l.cost, settings);
   const refTotal = r2(tref);
   return {
     deposit, financed, pmt: monthly, rows, orig, legal, refTotal,
@@ -89,4 +107,10 @@ export function calc(l: Pick<Loan, 'cost' | 'depositPct' | 'rate' | 'term' | 'fi
     totalFees: r2(orig + legal + refTotal),
     lastDate: rows[T - 1].date,
   };
+}
+
+/** Like calc, but null while the loan is missing something the schedule needs (pipeline loans). */
+export function calcLoan(l: Loan, settings: Settings): LoanCalc | null {
+  if (l.cost == null || l.rate == null || l.term == null || l.firstPaymentDate == null) return null;
+  return calc({ cost: l.cost, depositPct: l.depositPct, rate: l.rate, term: l.term, firstPaymentDate: l.firstPaymentDate }, settings);
 }

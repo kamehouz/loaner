@@ -4,15 +4,15 @@ import type { DataStore, Session } from './store';
 
 interface LoanRow {
   id: string;
-  loan_number: string;
+  loan_number: string | null;
   client: string;
   status: LoanStatus;
-  closing_date: string;
-  first_payment_date: string;
-  equipment_cost: number | string;
+  closing_date: string | null;
+  first_payment_date: string | null;
+  equipment_cost: number | string | null;
   deposit_pct: number | string;
-  interest_rate: number | string;
-  term_months: number;
+  interest_rate: number | string | null;
+  term_months: number | null;
 }
 
 interface BillingRow {
@@ -32,15 +32,17 @@ interface SettingsRow {
 
 const LOAN_COLS = 'id, loan_number, client, status, closing_date, first_payment_date, equipment_cost, deposit_pct, interest_rate, term_months';
 
-// Postgres numeric comes back as a string; convert once here.
+// Postgres numeric comes back as a string (and null when unknown); convert once here.
+const numOrNull = (v: number | string | null) => (v == null ? null : Number(v));
 const toLoan = (r: LoanRow): Loan => ({
   id: r.id, num: r.loan_number, client: r.client, status: r.status,
   closingDate: r.closing_date, firstPaymentDate: r.first_payment_date,
-  cost: Number(r.equipment_cost), depositPct: Number(r.deposit_pct), rate: Number(r.interest_rate), term: r.term_months,
+  cost: numOrNull(r.equipment_cost), depositPct: Number(r.deposit_pct), rate: numOrNull(r.interest_rate), term: r.term_months,
 });
 
 const fromLoan = (l: Partial<LoanInput>) => {
   const row: Record<string, unknown> = {};
+  if (l.num !== undefined) row.loan_number = l.num;
   if (l.client !== undefined) row.client = l.client;
   if (l.status !== undefined) row.status = l.status;
   if (l.closingDate !== undefined) row.closing_date = l.closingDate;
@@ -60,7 +62,8 @@ const toSettings = (r: SettingsRow): Settings => ({
   referralRatePct: Number(r.referral_rate_pct), originationPct: Number(r.origination_pct), legalPct: Number(r.legal_pct),
 });
 
-function must<T>(res: { data: T | null; error: { message: string } | null }): T {
+function must<T>(res: { data: T | null; error: { message: string; code?: string } | null }): T {
+  if (res.error?.code === '23505') throw new Error('Another loan already has that loan number.');
   if (res.error) throw new Error(res.error.message);
   return res.data as T;
 }

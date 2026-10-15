@@ -29,7 +29,7 @@ npm run build     # typecheck + production build into dist/
 ## Setting up Supabase
 
 1. Create a Supabase project.
-2. Run `supabase/migrations/20261005120000_loan_tracker.sql` in the SQL editor, or use `supabase db push`. You can also run `supabase/seed.sql` to load the sample loans. Every table is prefixed `tracker_`, so this is safe in a database shared with other apps, and the script can be run again safely.
+2. Run the two files in `supabase/migrations/` in order (`20261005120000_loan_tracker.sql`, then `20261015000000_pipeline_loans_optional.sql`) in the SQL editor, or use `supabase db push`. You can also run `supabase/seed.sql` to load the sample loans. Every table is prefixed `tracker_`, so this is safe in a database shared with other apps, and the script can be run again safely.
 3. Go to **Authentication → Sign In / Providers** and turn off **Allow new users to sign up**. Access is invite only.
 4. Go to **Authentication → Users** and invite each partner by email.
 5. To point the app at a different project, change `SUPABASE_URL` and `SUPABASE_KEY` in `src/data/index.ts` (values from **Project Settings → API**).

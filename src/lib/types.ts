@@ -1,26 +1,42 @@
 export type LoanStatus = 'Pipeline' | 'Closed' | 'Dead';
 
+/**
+ * Pipeline loans are still being underwritten, so everything except the client
+ * can be unknown (null) until the bank confirms it. Closed loans are always complete.
+ */
 export interface Loan {
   id: string;
-  /** Display number, e.g. DC-1001 */
-  num: string;
+  /** The bank's loan number, e.g. 20260412-A. Null until the bank assigns one. */
+  num: string | null;
   client: string;
   status: LoanStatus;
   /** ISO yyyy-mm-dd */
-  closingDate: string;
+  closingDate: string | null;
   /** ISO yyyy-mm-dd */
-  firstPaymentDate: string;
+  firstPaymentDate: string | null;
   /** Equipment cost in dollars */
-  cost: number;
-  /** Deposit as a percent of equipment cost, e.g. 10 for 10% */
+  cost: number | null;
+  /** Deposit as a percent of equipment cost, e.g. 10 for 10%. Counts as 0 until known. */
   depositPct: number;
   /** Yearly interest rate in percent, e.g. 8.99 */
-  rate: number;
+  rate: number | null;
   /** Term in months */
-  term: number;
+  term: number | null;
 }
 
-export type LoanInput = Omit<Loan, 'id' | 'num'>;
+export type LoanInput = Omit<Loan, 'id'>;
+
+/** What the bank still has to tell us about a loan, in plain words. Empty when nothing is missing. */
+export function missingInfo(l: Loan): string[] {
+  const missing: string[] = [];
+  if (!l.num) missing.push('loan number');
+  if (!l.closingDate) missing.push('closing date');
+  if (!l.firstPaymentDate) missing.push('first payment date');
+  if (l.cost == null) missing.push('equipment cost');
+  if (l.rate == null) missing.push('interest rate');
+  if (l.term == null) missing.push('term');
+  return missing;
+}
 
 export type FeeKind = 'orig' | 'legal' | 'ref';
 

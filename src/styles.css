@@ -317,3 +317,5 @@ select.input { padding: 0 12px; cursor: pointer; }
 
 .loading { min-height: 60vh; display: flex; align-items: center; justify-content: center; color: var(--ink-3); font-size: 14px; }
 .mobile .bill-total { border-right: 0; border-bottom: 1px solid var(--line-soft); }
+
+.needs { display: block; margin-top: 2px; font-size: 12px; font-weight: 400; color: var(--ink-3); }

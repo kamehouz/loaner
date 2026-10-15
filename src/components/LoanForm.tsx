@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { calc } from '../lib/calc';
+import { calc, dealSplit } from '../lib/calc';
 import { addMonths, fmtDate, money, num, parseDate, plainAmount, r2, todayIso } from '../lib/format';
 import type { Loan, LoanInput, LoanStatus, Settings } from '../lib/types';
 
 interface FormState {
+  /** The bank's loan number */
+  loanNumber: string;
   client: string;
   status: LoanStatus;
   closing: string;
@@ -17,18 +19,31 @@ interface FormState {
 }
 
 const fromLoan = (l: Loan | null): FormState => l
-  ? { client: l.client, status: l.status, closing: fmtDate(l.closingDate), first: fmtDate(l.firstPaymentDate), firstTouched: true, cost: plainAmount(l.cost), depositPct: String(l.depositPct), rate: String(l.rate), term: String(l.term) }
-  : { client: '', status: 'Pipeline', closing: '', first: '', firstTouched: false, cost: '', depositPct: '0', rate: '', term: '' };
+  ? {
+    loanNumber: l.num ?? '', client: l.client, status: l.status,
+    closing: l.closingDate ? fmtDate(l.closingDate) : '', first: l.firstPaymentDate ? fmtDate(l.firstPaymentDate) : '', firstTouched: !!l.firstPaymentDate,
+    cost: l.cost != null ? plainAmount(l.cost) : '', depositPct: String(l.depositPct), rate: l.rate != null ? String(l.rate) : '', term: l.term != null ? String(l.term) : '',
+  }
+  : { loanNumber: '', client: '', status: 'Pipeline', closing: '', first: '', firstTouched: false, cost: '', depositPct: '0', rate: '', term: '' };
 
+const validTerm = (s: string) => { const t = Number(s); return Number.isInteger(t) && t >= 1 && t <= 600; };
+
+/**
+ * Pipeline and dead loans only need a client: the bank hasn't confirmed the rest yet, so a
+ * detail can be left blank, but one that is typed must still make sense.
+ * A closed loan needs every detail.
+ */
 function validate(f: FormState) {
-  const t = Number(f.term);
+  const closed = f.status === 'Closed';
+  const bad = (value: string, valid: boolean) => (closed || value.trim() !== '') && !valid;
   return {
     client: !f.client.trim(),
-    closing: !parseDate(f.closing),
-    first: !parseDate(f.first),
-    cost: !(num(f.cost) > 0),
-    rate: f.rate.trim() === '' || !(num(f.rate) >= 0),
-    term: !Number.isInteger(t) || t < 1 || t > 600,
+    loanNumber: closed && !f.loanNumber.trim(),
+    closing: bad(f.closing, !!parseDate(f.closing)),
+    first: bad(f.first, !!parseDate(f.first)),
+    cost: bad(f.cost, num(f.cost) > 0),
+    rate: bad(f.rate, num(f.rate) >= 0),
+    term: bad(f.term, validTerm(f.term)),
   };
 }
 
@@ -46,6 +61,7 @@ export function LoanForm({ loan, settings, onClose, onSave }: Props) {
   const [saveError, setSaveError] = useState('');
   const set = (patch: Partial<FormState>) => setF((s) => ({ ...s, ...patch }));
   const err = tried ? validate(f) : null;
+  const closed = f.status === 'Closed';
 
   const statuses: LoanStatus[] = loan ? ['Pipeline', 'Closed', 'Dead'] : ['Pipeline', 'Closed'];
 
@@ -54,9 +70,11 @@ export function LoanForm({ loan, settings, onClose, onSave }: Props) {
     set(iso && !f.firstTouched ? { closing: v, first: fmtDate(addMonths(iso, 1)) } : { closing: v });
   };
 
+  // The preview shows whatever can be worked out so far.
   const cost = num(f.cost), rate = num(f.rate), term = Number(f.term);
-  const preview = cost > 0 && rate >= 0 && Number.isInteger(term) && term >= 1 && term <= 600
-    ? calc({ cost, depositPct: num(f.depositPct) || 0, rate, term, firstPaymentDate: todayIso() }, settings)
+  const split = cost > 0 ? dealSplit(cost, num(f.depositPct) || 0) : null;
+  const payment = cost > 0 && rate >= 0 && validTerm(f.term)
+    ? calc({ cost, depositPct: num(f.depositPct) || 0, rate, term, firstPaymentDate: todayIso() }, settings).pmt
     : null;
 
   const save = async () => {
@@ -64,11 +82,14 @@ export function LoanForm({ loan, settings, onClose, onSave }: Props) {
     if (Object.values(validate(f)).some(Boolean)) return;
     setBusy(true);
     setSaveError('');
+    const filled = (s: string) => s.trim() !== '';
     try {
       await onSave({
+        num: f.loanNumber.trim() || null,
         client: f.client.trim(), status: f.status,
-        closingDate: parseDate(f.closing)!, firstPaymentDate: parseDate(f.first)!,
-        cost: r2(cost), depositPct: num(f.depositPct) || 0, rate, term,
+        closingDate: parseDate(f.closing), firstPaymentDate: parseDate(f.first),
+        cost: filled(f.cost) ? r2(cost) : null, depositPct: num(f.depositPct) || 0,
+        rate: filled(f.rate) ? rate : null, term: filled(f.term) ? term : null,
       });
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : 'Could not save the loan.');
@@ -93,14 +114,24 @@ export function LoanForm({ loan, settings, onClose, onSave }: Props) {
             <div className="seg seg-form" role="radiogroup" aria-label="Status">
               {statuses.map((s) => <button key={s} type="button" role="radio" aria-checked={f.status === s} className={f.status === s ? 'on' : ''} onClick={() => set({ status: s })}>{s}</button>)}
             </div>
+            <span className="field-hint">
+              {closed ? 'A closed loan needs every detail below.' : 'Only the client is needed for now. Add the rest as the bank confirms it.'}
+            </span>
           </div>
+
+          <label className="field">Loan number
+            <input className="input" value={f.loanNumber} onChange={(e) => set({ loanNumber: e.target.value })} placeholder="The bank's loan number" />
+            {err?.loanNumber
+              ? <span className="field-error">Add the bank's loan number to close this loan.</span>
+              : <span className="field-hint">{closed ? 'As issued by the bank.' : 'Add it once the bank assigns one.'}</span>}
+          </label>
 
           <div className="form-row">
             <label className="field">Closing date
               <input className="input num" value={f.closing} onChange={(e) => onClosing(e.target.value)} placeholder="dd/mm/yyyy" inputMode="numeric" />
               {err?.closing
                 ? <span className="field-error">Use day/month/year, e.g. 20/10/2026.</span>
-                : <span className="field-hint">{f.status === 'Pipeline' ? 'Expected date is fine for pipeline loans.' : 'Day/month/year'}</span>}
+                : <span className="field-hint">{closed ? 'Day/month/year' : 'Optional. An expected date is fine.'}</span>}
             </label>
             <label className="field">First payment date
               <input className="input num" value={f.first} onChange={(e) => set({ first: e.target.value, firstTouched: true })} placeholder="dd/mm/yyyy" inputMode="numeric" />
@@ -126,13 +157,13 @@ export function LoanForm({ loan, settings, onClose, onSave }: Props) {
 
           <label className="field" style={{ maxWidth: 200 }}>Term
             <span className="affix"><input value={f.term} onChange={(e) => set({ term: e.target.value.replace(/[^0-9]/g, '') })} inputMode="numeric" placeholder="60" /><span>months</span></span>
-            {err?.term && <span className="field-error">Enter a whole number of months.</span>}
+            {err?.term && <span className="field-error">Enter a whole number of months, from 1 to 600.</span>}
           </label>
 
           <div className="preview">
-            <div><span>Deposit</span><span>{preview ? money(preview.deposit) : '—'}</span></div>
-            <div><span>Financed</span><span>{preview ? money(preview.financed) : '—'}</span></div>
-            <div><span>Monthly payment</span><span>{preview ? money(preview.pmt) : '—'}</span></div>
+            <div><span>Deposit</span><span>{split ? money(split.deposit) : '—'}</span></div>
+            <div><span>Financed</span><span>{split ? money(split.financed) : '—'}</span></div>
+            <div><span>Monthly payment</span><span>{payment != null ? money(payment) : '—'}</span></div>
           </div>
           {saveError && <div className="error-note" role="alert">{saveError}</div>}
         </div>

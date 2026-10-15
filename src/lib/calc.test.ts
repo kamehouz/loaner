@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { calc, referralSchedule } from './calc';
+import { calcLoan, referralSchedule } from './calc';
 import { billingItems, billingSummary, breakdownText } from './billing';
 import { parseDate, fmtDate, addMonths, money, ymOf } from './format';
 import { SAMPLE_LOANS } from './sample';
-import { DEFAULT_SETTINGS } from './types';
+import { DEFAULT_SETTINGS, missingInfo, type Loan } from './types';
 
 const clientA = SAMPLE_LOANS.find((l) => l.client === 'Client A')!;
 
@@ -36,7 +36,7 @@ describe('referral fee (Client A: $38,127.43 over 60 months at 0.5%)', () => {
 
 describe('loan calculation', () => {
   it('matches Client A from the brief', () => {
-    const c = calc(clientA, DEFAULT_SETTINGS);
+    const c = calcLoan(clientA, DEFAULT_SETTINGS)!;
     expect(c.financed).toBe(38127.43);
     expect(c.pmt).toBe(791.28);
     expect(c.orig).toBe(381.27);
@@ -48,7 +48,7 @@ describe('loan calculation', () => {
 
   it('works for any whole-number term', () => {
     for (const term of [1, 12, 50]) {
-      const c = calc({ ...clientA, term }, DEFAULT_SETTINGS);
+      const c = calcLoan({ ...clientA, term }, DEFAULT_SETTINGS)!;
       expect(c.rows).toHaveLength(term);
       expect(c.rows[term - 1].balance).toBe(0);
     }
@@ -56,7 +56,7 @@ describe('loan calculation', () => {
 
   it('applies deposit before financing', () => {
     const b = SAMPLE_LOANS.find((l) => l.client === 'Client B')!;
-    const c = calc(b, DEFAULT_SETTINGS);
+    const c = calcLoan(b, DEFAULT_SETTINGS)!;
     expect(c.deposit).toBe(5800);
     expect(c.financed).toBe(52200);
     expect(c.orig).toBe(580);
@@ -88,6 +88,32 @@ describe('billing', () => {
     const s = billingSummary(items, { [orig.key]: { loanId: orig.loan.id, kind: 'orig', period: orig.period, billed: true, dateBilled: null, invoice: '' } });
     expect(s.billed).toBe(580);
     expect(s.remaining).toBe(595.62);
+  });
+});
+
+describe('pipeline loans with details still missing', () => {
+  const waiting: Loan = { id: 'x', num: null, client: 'Waiting on bank', status: 'Pipeline', closingDate: null, firstPaymentDate: null, cost: null, depositPct: 0, rate: null, term: null };
+
+  it('lists what the bank still has to confirm', () => {
+    expect(missingInfo(waiting)).toEqual(['loan number', 'closing date', 'first payment date', 'equipment cost', 'interest rate', 'term']);
+    expect(missingInfo(clientA)).toEqual([]);
+  });
+
+  it('has no schedule until the rate, term and dates are known', () => {
+    expect(calcLoan(waiting, DEFAULT_SETTINGS)).toBeNull();
+    expect(calcLoan({ ...waiting, cost: 10000 }, DEFAULT_SETTINGS)).toBeNull();
+  });
+
+  it('does not break billing, and leaves October 2026 unchanged', () => {
+    const items = billingItems([...SAMPLE_LOANS, waiting], ymOf('2026-10-01'), DEFAULT_SETTINGS);
+    expect(billingSummary(items, {}).total).toBe(1175.62);
+  });
+
+  it('bills the upfront fees once the cost and closing date are known, even before the rate is', () => {
+    const partial: Loan = { ...waiting, cost: 20000, closingDate: '2026-10-28' };
+    const items = billingItems([partial], ymOf('2026-10-01'), DEFAULT_SETTINGS);
+    expect(items.map((i) => [i.kind, i.amount])).toEqual([['orig', 200], ['legal', 200]]);
+    expect(breakdownText(items, ymOf('2026-10-01'))).toContain('Waiting on bank\n');
   });
 });
 

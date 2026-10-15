@@ -1,4 +1,4 @@
-import { calc } from './calc';
+import { calcLoan, upfrontFees } from './calc';
 import { fmtDate, money, r2, ymLabel, ymOf, ymToIso, type YM } from './format';
 import { billingKey, type BillingRecord, type FeeKind, type Loan, type Settings } from './types';
 
@@ -23,11 +23,12 @@ export interface BillingItem {
 export function billingItems(loans: Loan[], ym: YM, settings: Settings): BillingItem[] {
   const items: BillingItem[] = [];
   const period = ymToIso(ym);
-  const sorted = [...loans].sort((x, y) => x.num.localeCompare(y.num));
+  const sorted = [...loans].sort((x, y) => (x.num ?? '').localeCompare(y.num ?? '') || x.client.localeCompare(y.client));
   for (const l of sorted) {
     if (l.status === 'Dead') continue;
-    const c = calc(l, settings);
-    if (l.status === 'Closed') {
+    // Referral fees need the full schedule, so only closed loans (which are always complete) have them.
+    const c = l.status === 'Closed' ? calcLoan(l, settings) : null;
+    if (c) {
       const row = c.rows.find((r) => r.ym === ym);
       if (row) {
         items.push({
@@ -36,10 +37,12 @@ export function billingItems(loans: Loan[], ym: YM, settings: Settings): Billing
         });
       }
     }
-    if (l.closingDate && ymOf(l.closingDate) === ym) {
+    // Upfront fees are billed in the closing month, as soon as the cost and closing date are known.
+    if (l.closingDate && l.cost != null && ymOf(l.closingDate) === ym) {
+      const { orig, legal } = upfrontFees(l.cost, settings);
       const detail = `Closes ${fmtDate(l.closingDate)}`;
-      items.push({ key: billingKey(l.id, 'orig', period), loan: l, kind: 'orig', period, type: 'Origination fee', short: 'Origination fee', detail, amount: c.orig });
-      items.push({ key: billingKey(l.id, 'legal', period), loan: l, kind: 'legal', period, type: 'Legal/closing fee', short: 'Legal/closing fee', detail, amount: c.legal });
+      items.push({ key: billingKey(l.id, 'orig', period), loan: l, kind: 'orig', period, type: 'Origination fee', short: 'Origination fee', detail, amount: orig });
+      items.push({ key: billingKey(l.id, 'legal', period), loan: l, kind: 'legal', period, type: 'Legal/closing fee', short: 'Legal/closing fee', detail, amount: legal });
     }
   }
   return items;
@@ -59,7 +62,7 @@ export function breakdownText(items: BillingItem[], ym: YM) {
   for (const i of items) {
     if (cur !== i.loan.id) {
       if (cur) lines.push('');
-      lines.push(`${i.loan.client} (${i.loan.num})`);
+      lines.push(i.loan.num ? `${i.loan.client} (${i.loan.num})` : i.loan.client);
       cur = i.loan.id;
     }
     lines.push(`  ${i.short}: ${money(i.amount)}`);

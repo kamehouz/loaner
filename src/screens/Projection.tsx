@@ -1,6 +1,6 @@
-import { calc } from '../lib/calc';
+import { calcLoan } from '../lib/calc';
 import { fmtDate, money, rate, ymOf } from '../lib/format';
-import type { Loan, Settings } from '../lib/types';
+import { missingInfo, type Loan, type Settings } from '../lib/types';
 import { Chip, Kv, PageHead } from '../components/ui';
 
 interface Props {
@@ -15,8 +15,8 @@ interface Props {
 export function Projection({ loans, loan, settings, today, onSelect, onAdd }: Props) {
   const curYm = ymOf(today);
 
-  const options = [...loans].sort((x, y) => x.num.localeCompare(y.num));
-  const c = loan ? calc(loan, settings) : null;
+  const options = [...loans].sort((x, y) => (x.num ?? '').localeCompare(y.num ?? '') || x.client.localeCompare(y.client));
+  const c = loan ? calcLoan(loan, settings) : null;
 
   return (
     <div className="screen">
@@ -24,13 +24,21 @@ export function Projection({ loans, loan, settings, today, onSelect, onAdd }: Pr
         {loan && (
           <label className="field" style={{ minWidth: 260 }}>Loan
             <select className="input" value={loan.id} onChange={(e) => onSelect(e.target.value)}>
-              {options.map((l) => <option key={l.id} value={l.id}>{l.client} · {l.num}{l.status === 'Dead' ? ' (dead)' : ''}</option>)}
+              {options.map((l) => <option key={l.id} value={l.id}>{l.client}{l.num ? ` · ${l.num}` : ''}{l.status === 'Dead' ? ' (dead)' : ''}</option>)}
             </select>
           </label>
         )}
       </PageHead>
 
-      {loan && c ? (
+      {loan && !c ? (
+        <div className="card panel" style={{ gap: 10 }}>
+          <h2>No payment schedule yet</h2>
+          <p style={{ fontSize: 14.5, color: 'var(--ink-2)', lineHeight: 1.5 }}>
+            {loan.client} is still missing: {missingInfo(loan).filter((m) => m !== 'loan number' && m !== 'closing date').join(', ')}.
+            Once the bank confirms them, add them with Edit loan and the payments and fees appear here.
+          </p>
+        </div>
+      ) : loan && c ? (
         <>
           <div className="panel-grid wide">
             <div className="card panel" style={{ gap: 16 }}>
@@ -38,10 +46,10 @@ export function Projection({ loans, loan, settings, today, onSelect, onAdd }: Pr
               <div className="summary-items">
                 {([
                   ['Client', loan.client],
-                  ['Equipment cost', money(loan.cost)],
+                  ['Equipment cost', money(loan.cost ?? 0)],
                   ['Deposit', `${money(c.deposit)} (${loan.depositPct}%)`],
                   ['Financed amount', money(c.financed)],
-                  ['Interest', rate(loan.rate)],
+                  ['Interest', rate(loan.rate ?? 0)],
                   ['Term', `${loan.term} months`],
                   ['Monthly payment', money(c.pmt)],
                 ] as const).map(([k, v]) => <div key={k}><span>{k}</span><span>{v}</span></div>)}
