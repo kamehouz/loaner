@@ -3,6 +3,20 @@ import { fmtDate, money, pct, rate, ymOf } from '../lib/format';
 import { missingInfo, type Loan, type Settings } from '../lib/types';
 import { ChevronLeft, Chip, Kv } from '../components/ui';
 
+function Contact({ org, name, email }: { org: string; name: string | null; email: string | null }) {
+  return (
+    <div className="contact-view">
+      <span className="contact-org">{org}</span>
+      {name || email ? (
+        <>
+          <b>{name ?? 'Name not added'}</b>
+          {email ? <a href={`mailto:${email}`}>{email}</a> : <span className="contact-none">Email not added</span>}
+        </>
+      ) : <span className="contact-none">Not added yet</span>}
+    </div>
+  );
+}
+
 interface Props {
   loan: Loan;
   settings: Settings;
@@ -74,6 +88,13 @@ export function LoanDetail({ loan, settings, today, onBack, onProjection, onEdit
           <Kv k="Legal/closing fee" v={amount(upfront?.legal)} />
           <Kv k="Referral fees, life of loan" v={amount(c?.refTotal)} />
           <Kv className="total" k="Total fees" v={amount(c?.totalFees)} />
+        </div>
+      </div>
+      <div className="card panel">
+        <h2>Contacts</h2>
+        <div className="contact-pair">
+          <Contact org="Rimco" name={loan.rimcoName} email={loan.rimcoEmail} />
+          <Contact org="Tu Coop" name={loan.tucoopName} email={loan.tucoopEmail} />
         </div>
       </div>
     </div>

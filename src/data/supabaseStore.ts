@@ -13,6 +13,10 @@ interface LoanRow {
   deposit_pct: number | string;
   interest_rate: number | string | null;
   term_months: number | null;
+  rimco_contact_name: string | null;
+  rimco_contact_email: string | null;
+  tucoop_contact_name: string | null;
+  tucoop_contact_email: string | null;
 }
 
 interface BillingRow {
@@ -30,7 +34,8 @@ interface SettingsRow {
   legal_pct: number | string;
 }
 
-const LOAN_COLS = 'id, loan_number, client, status, closing_date, first_payment_date, equipment_cost, deposit_pct, interest_rate, term_months';
+// Select every column: a column that doesn't exist yet (a migration not run) then reads as blank instead of breaking the whole list.
+const LOAN_COLS = '*';
 
 // Postgres numeric comes back as a string (and null when unknown); convert once here.
 const numOrNull = (v: number | string | null) => (v == null ? null : Number(v));
@@ -38,6 +43,8 @@ const toLoan = (r: LoanRow): Loan => ({
   id: r.id, num: r.loan_number, client: r.client, status: r.status,
   closingDate: r.closing_date, firstPaymentDate: r.first_payment_date,
   cost: numOrNull(r.equipment_cost), depositPct: Number(r.deposit_pct), rate: numOrNull(r.interest_rate), term: r.term_months,
+  rimcoName: r.rimco_contact_name ?? null, rimcoEmail: r.rimco_contact_email ?? null,
+  tucoopName: r.tucoop_contact_name ?? null, tucoopEmail: r.tucoop_contact_email ?? null,
 });
 
 const fromLoan = (l: Partial<LoanInput>) => {
@@ -51,6 +58,10 @@ const fromLoan = (l: Partial<LoanInput>) => {
   if (l.depositPct !== undefined) row.deposit_pct = l.depositPct;
   if (l.rate !== undefined) row.interest_rate = l.rate;
   if (l.term !== undefined) row.term_months = l.term;
+  if (l.rimcoName !== undefined) row.rimco_contact_name = l.rimcoName;
+  if (l.rimcoEmail !== undefined) row.rimco_contact_email = l.rimcoEmail;
+  if (l.tucoopName !== undefined) row.tucoop_contact_name = l.tucoopName;
+  if (l.tucoopEmail !== undefined) row.tucoop_contact_email = l.tucoopEmail;
   return row;
 };
 

@@ -55,3 +55,6 @@ export const num = (s: string | number | null | undefined) => parseFloat(String(
 
 export const pct = (n: number) => `${n}%`;
 export const rate = (n: number) => n.toFixed(2) + '%';
+
+/** A deliberately simple check: something@something.tld, no spaces. */
+export const isEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());

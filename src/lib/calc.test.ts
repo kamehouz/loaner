@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { calcLoan, referralSchedule } from './calc';
 import { billingItems, billingSummary, breakdownText } from './billing';
-import { parseDate, fmtDate, addMonths, money, ymOf } from './format';
+import { parseDate, fmtDate, addMonths, isEmail, money, ymOf } from './format';
 import { SAMPLE_LOANS } from './sample';
 import { DEFAULT_SETTINGS, missingInfo, type Loan } from './types';
 
@@ -92,7 +92,7 @@ describe('billing', () => {
 });
 
 describe('pipeline loans with details still missing', () => {
-  const waiting: Loan = { id: 'x', num: null, client: 'Waiting on bank', status: 'Pipeline', closingDate: null, firstPaymentDate: null, cost: null, depositPct: 0, rate: null, term: null };
+  const waiting: Loan = { id: 'x', num: null, client: 'Waiting on bank', status: 'Pipeline', closingDate: null, firstPaymentDate: null, cost: null, depositPct: 0, rate: null, term: null, rimcoName: null, rimcoEmail: null, tucoopName: null, tucoopEmail: null };
 
   it('lists what the bank still has to confirm', () => {
     expect(missingInfo(waiting)).toEqual(['loan number', 'closing date', 'first payment date', 'equipment cost', 'interest rate', 'term']);
@@ -125,6 +125,11 @@ describe('formatting', () => {
     expect(parseDate('20/10/2026')).toBe('2026-10-20');
     expect(fmtDate('2026-10-20')).toBe('20/10/2026');
     expect(parseDate('31/02/2026')).toBeNull();
+  });
+  it('accepts a normal email and rejects obvious typos', () => {
+    expect(isEmail('alex.morgan@example.com')).toBe(true);
+    expect(isEmail(' alex@example.com ')).toBe(true);
+    for (const bad of ['alex', 'alex@', 'alex@example', 'alex @example.com', '@example.com']) expect(isEmail(bad)).toBe(false);
   });
   it('adds months clamping to the end of the month', () => {
     expect(addMonths('2026-01-31', 1)).toBe('2026-02-28');

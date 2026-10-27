@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { calc, dealSplit } from '../lib/calc';
-import { addMonths, fmtDate, money, num, parseDate, plainAmount, r2, todayIso } from '../lib/format';
+import { addMonths, fmtDate, isEmail, money, num, parseDate, plainAmount, r2, todayIso } from '../lib/format';
 import type { Loan, LoanInput, LoanStatus, Settings } from '../lib/types';
 
 interface FormState {
@@ -16,6 +16,10 @@ interface FormState {
   depositPct: string;
   rate: string;
   term: string;
+  rimcoName: string;
+  rimcoEmail: string;
+  tucoopName: string;
+  tucoopEmail: string;
 }
 
 const fromLoan = (l: Loan | null): FormState => l
@@ -23,8 +27,9 @@ const fromLoan = (l: Loan | null): FormState => l
     loanNumber: l.num ?? '', client: l.client, status: l.status,
     closing: l.closingDate ? fmtDate(l.closingDate) : '', first: l.firstPaymentDate ? fmtDate(l.firstPaymentDate) : '', firstTouched: !!l.firstPaymentDate,
     cost: l.cost != null ? plainAmount(l.cost) : '', depositPct: String(l.depositPct), rate: l.rate != null ? String(l.rate) : '', term: l.term != null ? String(l.term) : '',
+    rimcoName: l.rimcoName ?? '', rimcoEmail: l.rimcoEmail ?? '', tucoopName: l.tucoopName ?? '', tucoopEmail: l.tucoopEmail ?? '',
   }
-  : { loanNumber: '', client: '', status: 'Pipeline', closing: '', first: '', firstTouched: false, cost: '', depositPct: '0', rate: '', term: '' };
+  : { loanNumber: '', client: '', status: 'Pipeline', closing: '', first: '', firstTouched: false, cost: '', depositPct: '0', rate: '', term: '', rimcoName: '', rimcoEmail: '', tucoopName: '', tucoopEmail: '' };
 
 const validTerm = (s: string) => { const t = Number(s); return Number.isInteger(t) && t >= 1 && t <= 600; };
 
@@ -44,6 +49,9 @@ function validate(f: FormState) {
     cost: bad(f.cost, num(f.cost) > 0),
     rate: bad(f.rate, num(f.rate) >= 0),
     term: bad(f.term, validTerm(f.term)),
+    // Contacts are never required, but an email that is typed has to look like one.
+    rimcoEmail: f.rimcoEmail.trim() !== '' && !isEmail(f.rimcoEmail),
+    tucoopEmail: f.tucoopEmail.trim() !== '' && !isEmail(f.tucoopEmail),
   };
 }
 
@@ -90,6 +98,8 @@ export function LoanForm({ loan, settings, onClose, onSave }: Props) {
         closingDate: parseDate(f.closing), firstPaymentDate: parseDate(f.first),
         cost: filled(f.cost) ? r2(cost) : null, depositPct: num(f.depositPct) || 0,
         rate: filled(f.rate) ? rate : null, term: filled(f.term) ? term : null,
+        rimcoName: f.rimcoName.trim() || null, rimcoEmail: f.rimcoEmail.trim() || null,
+        tucoopName: f.tucoopName.trim() || null, tucoopEmail: f.tucoopEmail.trim() || null,
       });
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : 'Could not save the loan.');
@@ -164,6 +174,32 @@ export function LoanForm({ loan, settings, onClose, onSave }: Props) {
             <div><span>Deposit</span><span>{split ? money(split.deposit) : '—'}</span></div>
             <div><span>Financed</span><span>{split ? money(split.financed) : '—'}</span></div>
             <div><span>Monthly payment</span><span>{payment != null ? money(payment) : '—'}</span></div>
+          </div>
+
+          <div className="form-section">
+            <div className="form-section-head"><b>Contacts</b><span>Optional. Keep who to reach on file.</span></div>
+            <div className="contact-grid">
+              <div className="contact-card">
+                <h3>Rimco contact</h3>
+                <label className="field">Name
+                  <input className="input" value={f.rimcoName} onChange={(e) => set({ rimcoName: e.target.value })} placeholder="Full name" autoComplete="off" />
+                </label>
+                <label className="field">Email
+                  <input className={'input' + (err?.rimcoEmail ? ' invalid' : '')} type="email" inputMode="email" value={f.rimcoEmail} onChange={(e) => set({ rimcoEmail: e.target.value })} placeholder="name@company.com" autoComplete="off" />
+                  {err?.rimcoEmail && <span className="field-error">Check the email address.</span>}
+                </label>
+              </div>
+              <div className="contact-card">
+                <h3>Tu Coop contact</h3>
+                <label className="field">Name
+                  <input className="input" value={f.tucoopName} onChange={(e) => set({ tucoopName: e.target.value })} placeholder="Full name" autoComplete="off" />
+                </label>
+                <label className="field">Email
+                  <input className={'input' + (err?.tucoopEmail ? ' invalid' : '')} type="email" inputMode="email" value={f.tucoopEmail} onChange={(e) => set({ tucoopEmail: e.target.value })} placeholder="name@company.com" autoComplete="off" />
+                  {err?.tucoopEmail && <span className="field-error">Check the email address.</span>}
+                </label>
+              </div>
+            </div>
           </div>
           {saveError && <div className="error-note" role="alert">{saveError}</div>}
         </div>

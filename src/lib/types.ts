@@ -22,6 +22,11 @@ export interface Loan {
   rate: number | null;
   /** Term in months */
   term: number | null;
+  /** Optional contacts kept on file. Any of the four can be blank. */
+  rimcoName: string | null;
+  rimcoEmail: string | null;
+  tucoopName: string | null;
+  tucoopEmail: string | null;
 }
 
 export type LoanInput = Omit<Loan, 'id'>;
