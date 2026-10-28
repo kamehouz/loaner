@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { calcLoan, referralSchedule } from './calc';
 import { billingItems, billingSummary, breakdownText } from './billing';
-import { parseDate, fmtDate, addMonths, isEmail, money, ymOf } from './format';
+import { parseDate, fmtDate, fmtDateTime, addMonths, isEmail, money, ymOf } from './format';
+import { authorName, latestNoteByLoan } from './notes';
 import { SAMPLE_LOANS } from './sample';
-import { DEFAULT_SETTINGS, missingInfo, type Loan } from './types';
+import { DEFAULT_SETTINGS, missingInfo, type Loan, type Note } from './types';
 
 const clientA = SAMPLE_LOANS.find((l) => l.client === 'Client A')!;
 
@@ -133,5 +134,25 @@ describe('formatting', () => {
   });
   it('adds months clamping to the end of the month', () => {
     expect(addMonths('2026-01-31', 1)).toBe('2026-02-28');
+  });
+});
+
+describe('notes', () => {
+  const note = (id: string, loanId: string, createdAt: string): Note => ({ id, loanId, body: id, author: 'cfavot@pirillolaw.com', createdAt });
+
+  it('finds the newest note for each loan', () => {
+    const latest = latestNoteByLoan([note('old', 'a', '2026-10-01T10:00:00Z'), note('new', 'a', '2026-10-28T10:00:00Z'), note('other', 'b', '2026-10-05T10:00:00Z')]);
+    expect(latest.a.id).toBe('new');
+    expect(latest.b.id).toBe('other');
+    expect(latest.c).toBeUndefined();
+  });
+
+  it('shows who wrote a note by the start of their email', () => {
+    expect(authorName('cfavot@pirillolaw.com')).toBe('cfavot');
+  });
+
+  it('writes the date day/month/year with the time', () => {
+    expect(fmtDateTime('2026-10-28T12:00:00')).toMatch(/^28\/10\/2026, 12:00 PM$/);
+    expect(fmtDateTime('not a date')).toBe('');
   });
 });

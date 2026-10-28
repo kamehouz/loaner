@@ -1,6 +1,7 @@
 import { calcLoan, dealSplit, upfrontFees } from '../lib/calc';
 import { fmtDate, money, pct, rate, ymOf } from '../lib/format';
-import { missingInfo, type Loan, type Settings } from '../lib/types';
+import { missingInfo, type Loan, type Note, type Settings } from '../lib/types';
+import { Notes } from '../components/Notes';
 import { ChevronLeft, Chip, Kv } from '../components/ui';
 
 function Contact({ org, name, email }: { org: string; name: string | null; email: string | null }) {
@@ -26,9 +27,13 @@ interface Props {
   onEdit: () => void;
   onMarkDead: () => void;
   onRestore: () => void;
+  /** Notes for this loan, newest first */
+  notes: Note[];
+  onAddNote: (body: string) => Promise<void>;
+  onDeleteNote: (id: string) => Promise<void>;
 }
 
-export function LoanDetail({ loan, settings, today, onBack, onProjection, onEdit, onMarkDead, onRestore }: Props) {
+export function LoanDetail({ loan, settings, today, onBack, onProjection, onEdit, onMarkDead, onRestore, notes, onAddNote, onDeleteNote }: Props) {
   const c = calcLoan(loan, settings);
   const nowRow = c?.rows.find((r) => r.ym === ymOf(today));
   const dead = loan.status === 'Dead';
@@ -90,6 +95,7 @@ export function LoanDetail({ loan, settings, today, onBack, onProjection, onEdit
           <Kv className="total" k="Total fees" v={amount(c?.totalFees)} />
         </div>
       </div>
+      <Notes notes={notes} onAdd={onAddNote} onDelete={onDeleteNote} />
       <div className="card panel">
         <h2>Contacts</h2>
         <div className="contact-pair">

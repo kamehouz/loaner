@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { BillingRecord, FeeKind, Loan, LoanInput, LoanStatus, Settings } from '../lib/types';
+import type { BillingRecord, FeeKind, Loan, LoanInput, LoanStatus, Note, Settings } from '../lib/types';
 import type { DataStore, Session } from './store';
 
 interface LoanRow {
@@ -26,6 +26,14 @@ interface BillingRow {
   billed: boolean;
   date_billed: string | null;
   invoice_number: string;
+}
+
+interface NoteRow {
+  id: string;
+  loan_id: string;
+  body: string;
+  author: string;
+  created_at: string;
 }
 
 interface SettingsRow {
@@ -69,9 +77,19 @@ const toBilling = (r: BillingRow): BillingRecord => ({
   loanId: r.loan_id, kind: r.fee_type, period: r.period, billed: r.billed, dateBilled: r.date_billed, invoice: r.invoice_number,
 });
 
+const toNote = (r: NoteRow): Note => ({ id: r.id, loanId: r.loan_id, body: r.body, author: r.author, createdAt: r.created_at });
+
 const toSettings = (r: SettingsRow): Settings => ({
   referralRatePct: Number(r.referral_rate_pct), originationPct: Number(r.origination_pct), legalPct: Number(r.legal_pct),
 });
+
+// The notes table comes from a separate one-time database update. Say so plainly if it is missing.
+function mustNotes<T>(res: { data: T | null; error: { message: string; code?: string } | null }): T {
+  if (res.error && (res.error.code === 'PGRST205' || res.error.code === '42P01' || /schema cache/i.test(res.error.message))) {
+    throw new Error('Notes need a one-time database update first.');
+  }
+  return must(res);
+}
 
 function must<T>(res: { data: T | null; error: { message: string; code?: string } | null }): T {
   if (res.error?.code === '23505') throw new Error('Another loan already has that loan number.');
@@ -126,6 +144,16 @@ export function createSupabaseStore(url: string, anonKey: string): DataStore {
     },
     async updateLoan(id, patch) {
       return toLoan(must(await sb.from('tracker_loans').update(fromLoan(patch)).eq('id', id).select(LOAN_COLS).single()) as LoanRow);
+    },
+
+    async listNotes() {
+      return mustNotes(await sb.from('tracker_loan_notes').select('*').order('created_at', { ascending: false })).map((r) => toNote(r as NoteRow));
+    },
+    async addNote(loanId, body) {
+      return toNote(mustNotes(await sb.from('tracker_loan_notes').insert({ loan_id: loanId, body }).select('*').single()) as NoteRow);
+    },
+    async deleteNote(id) {
+      mustNotes(await sb.from('tracker_loan_notes').delete().eq('id', id).select('id'));
     },
 
     async listBilling() {

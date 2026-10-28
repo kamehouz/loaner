@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { openedFromRecoveryLink, store, type Session } from './data';
 import { todayIso, ymOf, type YM } from './lib/format';
-import { billingKey, type BillingRecord, type Loan, type LoanInput, type Settings } from './lib/types';
+import { billingKey, type BillingRecord, type Loan, type LoanInput, type Note, type Settings } from './lib/types';
 import { LoanForm } from './components/LoanForm';
 import { Logo, Toast, useIsMobile } from './components/ui';
 import { Billing } from './screens/Billing';
@@ -45,6 +45,8 @@ interface Data {
   loans: Loan[];
   records: Record<string, BillingRecord>;
   settings: Settings;
+  /** Every note on every loan, newest first */
+  notes: Note[];
 }
 
 function Tracker({ session }: { session: Session }) {
@@ -65,9 +67,10 @@ function Tracker({ session }: { session: Session }) {
 
   const load = useCallback(async () => {
     try {
-      const [loans, billing, settings] = await Promise.all([store.listLoans(), store.listBilling(), store.getSettings()]);
+      // Notes are optional: if their table isn't set up yet, the rest of the app still loads.
+      const [loans, billing, settings, notes] = await Promise.all([store.listLoans(), store.listBilling(), store.getSettings(), store.listNotes().catch(() => [] as Note[])]);
       const records = Object.fromEntries(billing.map((r) => [billingKey(r.loanId, r.kind, r.period), r]));
-      setData({ loans, records, settings });
+      setData({ loans, records, settings, notes });
       setLoadError('');
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : String(e));
@@ -119,6 +122,16 @@ function Tracker({ session }: { session: Session }) {
     }
   };
 
+  const addNote = async (loanId: string, body: string) => {
+    const note = await store.addNote(loanId, body);
+    setData((d) => d && { ...d, notes: [note, ...d.notes] });
+  };
+  const deleteNote = async (id: string) => {
+    await store.deleteNote(id);
+    setData((d) => d && { ...d, notes: d.notes.filter((n) => n.id !== id) });
+    flash('Note deleted');
+  };
+
   const saveSettings = async (s: Settings) => {
     const settings = await store.saveSettings(s);
     setData((d) => d && { ...d, settings });
@@ -143,7 +156,7 @@ function Tracker({ session }: { session: Session }) {
   } else if (screen === 'overview') {
     body = <Overview loans={loans} settings={data.settings} today={today} ym={ym} currentYm={currentYm} onMonth={setYm} onOpenLoan={openLoan} mobile={mobile} />;
   } else if (screen === 'loans' || (screen === 'detail' && !detailLoan)) {
-    body = <Loans loans={loans} settings={data.settings} mobile={mobile} onAdd={() => setForm({ loan: null })} onOpenLoan={openLoan} />;
+    body = <Loans loans={loans} notes={data.notes} settings={data.settings} mobile={mobile} onAdd={() => setForm({ loan: null })} onOpenLoan={openLoan} />;
   } else if (screen === 'detail' && detailLoan) {
     body = (
       <LoanDetail
@@ -152,6 +165,9 @@ function Tracker({ session }: { session: Session }) {
         onProjection={() => { setProjId(detailLoan.id); go('projection'); }}
         onEdit={() => setForm({ loan: detailLoan })}
         onMarkDead={() => setConfirmDead(true)}
+        notes={data.notes.filter((n) => n.loanId === detailLoan.id)}
+        onAddNote={(body) => addNote(detailLoan.id, body)}
+        onDeleteNote={deleteNote}
         onRestore={() => updateLoan(detailLoan.id, { status: 'Pipeline' }).then(() => flash(`${detailLoan.client} moved back to pipeline`), (e) => flash(`Couldn't save: ${e.message}`))}
       />
     );

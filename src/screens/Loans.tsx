@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { calcLoan, dealSplit } from '../lib/calc';
-import { fmtDate, money, pct, rate } from '../lib/format';
-import { missingInfo, type Loan, type LoanStatus, type Settings } from '../lib/types';
+import { fmtDate, fmtDateTime, money, pct, rate } from '../lib/format';
+import { missingInfo, type Loan, type LoanStatus, type Note, type Settings } from '../lib/types';
+import { latestNoteByLoan } from '../lib/notes';
 import { Chip, PageHead } from '../components/ui';
 
 type Filter = 'All' | LoanStatus;
@@ -9,13 +10,14 @@ const FILTERS: Filter[] = ['All', 'Pipeline', 'Closed', 'Dead'];
 
 interface Props {
   loans: Loan[];
+  notes: Note[];
   settings: Settings;
   mobile: boolean;
   onAdd: () => void;
   onOpenLoan: (id: string) => void;
 }
 
-export function Loans({ loans, settings, mobile, onAdd, onOpenLoan }: Props) {
+export function Loans({ loans, notes, settings, mobile, onAdd, onOpenLoan }: Props) {
   const [filter, setFilter] = useState<Filter>('All');
   const nActive = loans.filter((l) => l.status !== 'Dead').length;
   const filtered = filter === 'All' ? loans : loans.filter((l) => l.status === filter);
@@ -27,6 +29,11 @@ export function Loans({ loans, settings, mobile, onAdd, onOpenLoan }: Props) {
     const missing = l.status === 'Pipeline' ? missingInfo(l) : [];
     return { l, c, split, missing };
   });
+  const latest = latestNoteByLoan(notes);
+  const latestLine = (l: Loan) => {
+    const n = latest[l.id];
+    return n && <small className="latest" title={n.body}><b>{fmtDateTime(n.createdAt).split(',')[0]}</b>{n.body}</small>;
+  };
   const dash = '—';
   const amount = (n: number | null | undefined) => (n == null ? dash : money(n));
   const needs = (missing: string[]) => missing.length > 0 && (
@@ -69,7 +76,7 @@ export function Loans({ loans, settings, mobile, onAdd, onOpenLoan }: Props) {
               {rows.map(({ l, c, missing }) => (
                 <div key={l.id} className={'card loan-card' + (l.status === 'Dead' ? ' dead' : '')} onClick={() => onOpenLoan(l.id)}>
                   <div className="loan-card-head">
-                    <div><b>{l.client}</b><span className="mono" style={{ fontSize: 12.5, color: 'var(--ink-2)' }}>{l.num ?? 'No loan number yet'}</span>{needs(missing)}</div>
+                    <div><b>{l.client}</b><span className="mono" style={{ fontSize: 12.5, color: 'var(--ink-2)' }}>{l.num ?? 'No loan number yet'}</span>{needs(missing)}{latestLine(l)}</div>
                     <Chip status={l.status} />
                   </div>
                   <div className="loan-card-grid">
@@ -83,7 +90,7 @@ export function Loans({ loans, settings, mobile, onAdd, onOpenLoan }: Props) {
             </div>
           ) : (
             <div className="table scroll">
-              <div style={{ minWidth: 1290 }}>
+              <div style={{ minWidth: 1380 }}>
                 <div className="trow thead loan-cols">
                   <span>Loan #</span><span>Client or company</span><span>Status</span><span>Closing date</span><span>First payment</span>
                   <span className="r">Equipment cost</span><span className="r">Deposit %</span><span className="r">Interest</span><span className="r">Term</span>
@@ -92,7 +99,7 @@ export function Loans({ loans, settings, mobile, onAdd, onOpenLoan }: Props) {
                 {rows.map(({ l, c, split, missing }) => (
                   <div key={l.id} className={'trow tbody-row loan-cols clickable' + (l.status === 'Dead' ? ' dead' : '')} onClick={() => onOpenLoan(l.id)}>
                     <span className="mono" style={{ fontSize: 13, color: 'var(--ink-2)' }}>{l.num ?? dash}</span>
-                    <span><span style={{ fontWeight: 500 }}>{l.client}</span>{needs(missing)}</span>
+                    <span><span style={{ fontWeight: 500 }}>{l.client}</span>{needs(missing)}{latestLine(l)}</span>
                     <span className="status-cell"><Chip status={l.status} /></span>
                     <span>{fmtDate(l.closingDate)}</span>
                     <span>{fmtDate(l.firstPaymentDate)}</span>

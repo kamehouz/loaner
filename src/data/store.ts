@@ -1,4 +1,4 @@
-import type { BillingRecord, Loan, LoanInput, Settings } from '../lib/types';
+import type { BillingRecord, Loan, LoanInput, Note, Settings } from '../lib/types';
 
 export interface Session {
   email: string;
@@ -22,6 +22,11 @@ export interface DataStore {
   listLoans(): Promise<Loan[]>;
   createLoan(input: LoanInput): Promise<Loan>;
   updateLoan(id: string, patch: Partial<LoanInput>): Promise<Loan>;
+
+  /** Every note on every loan, newest first. */
+  listNotes(): Promise<Note[]>;
+  addNote(loanId: string, body: string): Promise<Note>;
+  deleteNote(id: string): Promise<void>;
 
   listBilling(): Promise<BillingRecord[]>;
   saveBilling(rec: BillingRecord): Promise<BillingRecord>;

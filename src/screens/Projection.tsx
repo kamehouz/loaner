@@ -15,7 +15,10 @@ interface Props {
 export function Projection({ loans, loan, settings, today, onSelect, onAdd }: Props) {
   const curYm = ymOf(today);
 
-  const options = [...loans].sort((x, y) => (x.num ?? '').localeCompare(y.num ?? '') || x.client.localeCompare(y.client));
+  // Grouped by status and sorted by name, so a long list stays easy to scan.
+  const groups = (['Closed', 'Pipeline', 'Dead'] as const)
+    .map((status) => ({ status, items: loans.filter((l) => l.status === status).sort((x, y) => x.client.localeCompare(y.client)) }))
+    .filter((g) => g.items.length > 0);
   const c = loan ? calcLoan(loan, settings) : null;
 
   return (
@@ -24,7 +27,11 @@ export function Projection({ loans, loan, settings, today, onSelect, onAdd }: Pr
         {loan && (
           <label className="field" style={{ minWidth: 260 }}>Loan
             <select className="input" value={loan.id} onChange={(e) => onSelect(e.target.value)}>
-              {options.map((l) => <option key={l.id} value={l.id}>{l.client}{l.num ? ` · ${l.num}` : ''}{l.status === 'Dead' ? ' (dead)' : ''}</option>)}
+              {groups.map((g) => (
+                <optgroup key={g.status} label={`${g.status} (${g.items.length})`}>
+                  {g.items.map((l) => <option key={l.id} value={l.id}>{l.client}{l.num ? ` · ${l.num}` : ''}</option>)}
+                </optgroup>
+              ))}
             </select>
           </label>
         )}

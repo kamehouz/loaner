@@ -69,3 +69,14 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = { referralRatePct: 0.5, originationPct: 1, legalPct: 1 };
 
 export const billingKey = (loanId: string, kind: FeeKind, period: string) => `${loanId}|${kind}|${period}`;
+
+/** One entry in a loan's running log of notes. */
+export interface Note {
+  id: string;
+  loanId: string;
+  body: string;
+  /** Email of the partner who wrote it */
+  author: string;
+  /** ISO timestamp */
+  createdAt: string;
+}

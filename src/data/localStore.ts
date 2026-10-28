@@ -1,5 +1,5 @@
-import { SAMPLE_LOANS } from '../lib/sample';
-import { billingKey, DEFAULT_SETTINGS, type BillingRecord, type Loan, type Settings } from '../lib/types';
+import { SAMPLE_LOANS, SAMPLE_NOTES } from '../lib/sample';
+import { billingKey, DEFAULT_SETTINGS, type BillingRecord, type Loan, type Note, type Settings } from '../lib/types';
 import type { DataStore, Session } from './store';
 
 const KEY = 'dinio-tracker-demo-v1';
@@ -7,6 +7,7 @@ const KEY = 'dinio-tracker-demo-v1';
 interface Saved {
   session: Session | null;
   loans: Loan[];
+  notes: Note[];
   billing: Record<string, BillingRecord>;
   settings: Settings;
 }
@@ -14,11 +15,11 @@ interface Saved {
 function load(): Saved {
   try {
     const s = JSON.parse(localStorage.getItem(KEY) || 'null');
-    if (s && Array.isArray(s.loans)) return { session: null, billing: {}, settings: DEFAULT_SETTINGS, ...s };
+    if (s && Array.isArray(s.loans)) return { session: null, notes: [], billing: {}, settings: DEFAULT_SETTINGS, ...s };
   } catch {
     // Storage unavailable or corrupt: start from the sample data.
   }
-  return { session: null, loans: SAMPLE_LOANS, billing: {}, settings: DEFAULT_SETTINGS };
+  return { session: null, loans: SAMPLE_LOANS, notes: SAMPLE_NOTES, billing: {}, settings: DEFAULT_SETTINGS };
 }
 
 /**
@@ -74,6 +75,18 @@ export function createLocalStore({ autoSignIn = false } = {}): DataStore {
       if (!updated) throw new Error('Loan not found');
       save();
       return updated;
+    },
+
+    async listNotes() { return [...db.notes].sort((a, b) => b.createdAt.localeCompare(a.createdAt)); },
+    async addNote(loanId, body) {
+      const note: Note = { id: 'n' + Date.now() + Math.random().toString(36).slice(2, 6), loanId, body, author: db.session?.email ?? 'Demo partner', createdAt: new Date().toISOString() };
+      db = { ...db, notes: [note, ...db.notes] };
+      save();
+      return note;
+    },
+    async deleteNote(id) {
+      db = { ...db, notes: db.notes.filter((n) => n.id !== id) };
+      save();
     },
 
     async listBilling() { return Object.values(db.billing); },

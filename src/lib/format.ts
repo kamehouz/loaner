@@ -58,3 +58,12 @@ export const rate = (n: number) => n.toFixed(2) + '%';
 
 /** A deliberately simple check: something@something.tld, no spaces. */
 export const isEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
+
+/** 28/10/2026, 3:42 PM (in the viewer's own time zone) */
+export const fmtDateTime = (iso: string) => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const date = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return `${date}, ${time}`;
+};
